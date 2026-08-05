@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact — NOVRA</title>
+<meta name="description" content="Contactez l'équipe NOVRA : questions produits, commandes, livraison, retours et guide des tailles.">
+<link rel="canonical" href="https://www.novra.fr/contact.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="NOVRA">
+<meta property="og:title" content="Contact — NOVRA">
+<meta property="og:description" content="Une question ? L'équipe NOVRA vous répond.">
+<meta property="og:url" content="https://www.novra.fr/contact.html">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" href="assets/web/logo/favicon.ico" sizes="any">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/responsive.css">
+<link rel="stylesheet" href="css/animations.css">
+</head>
+
+<body data-page="contact" class="has-solid-header">
+<a class="skip-link" href="#main">Aller au contenu</a>
+<div id="header-root"></div>
+
+<main id="main">
+  <div class="container">
+    <p class="breadcrumb" style="padding-top:34px"><a href="index.html">Accueil</a><span>/</span>Contact</p>
+    <h1 class="display-2">Contact</h1>
+    <p class="lead" style="margin-top:18px">Une question sur un produit, une commande ou une taille ? Écrivez-nous, nous répondons rapidement.</p>
+
+    <div class="contact-layout">
+      <form id="contact-form" novalidate>
+        <div class="field-row">
+          <div class="field">
+            <label for="c-firstname">Prénom</label>
+            <input type="text" id="c-firstname" name="firstname" autocomplete="given-name" required>
+            <span class="field-error"></span>
+          </div>
+          <div class="field">
+            <label for="c-lastname">Nom</label>
+            <input type="text" id="c-lastname" name="lastname" autocomplete="family-name" required>
+            <span class="field-error"></span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="c-email">Adresse e-mail</label>
+          <input type="email" id="c-email" name="email" autocomplete="email" required>
+          <span class="field-error"></span>
+        </div>
+
+        <div class="field">
+          <label for="c-phone">Téléphone (facultatif)</label>
+          <input type="tel" id="c-phone" name="phone" autocomplete="tel">
+          <span class="field-error"></span>
+        </div>
+
+        <div class="field">
+          <label for="c-subject">Sujet</label>
+          <select id="c-subject" name="subject" required>
+            <option value="">Sélectionnez un sujet</option>
+            <option>Question produit</option>
+            <option>Suivi de commande</option>
+            <option>Livraison et retours</option>
+            <option>Guide des tailles</option>
+            <option>Partenariat</option>
+            <option>Autre demande</option>
+          </select>
+          <span class="field-error"></span>
+        </div>
+
+        <div class="field">
+          <label for="c-message">Message</label>
+          <textarea id="c-message" name="message" required></textarea>
+          <span class="field-error"></span>
+        </div>
+
+        <label class="check">
+          <input type="checkbox" id="c-consent" name="consent" required>
+          <span>J'accepte que mes informations soient utilisées pour traiter ma demande, conformément à la <a href="politique-confidentialite.html" style="text-decoration:underline">politique de confidentialité</a>.</span>
+        </label>
+        <span class="field-error" id="consent-error"></span>
+
+        <button class="btn" type="submit" style="margin-top:24px">Envoyer le message</button>
+        <p class="form-feedback" id="contact-feedback" role="status" aria-live="polite"></p>
+      </form>
+
+      <aside>
+        <div class="contact-aside" style="margin-bottom:20px">
+          <h3 class="display-4">Suivez NOVRA</h3>
+          <p>Nouveautés, coulisses et communauté : tout se passe sur Instagram.</p>
+          <a class="btn btn-outline btn-block" href="https://www.instagram.com/novra_officiel/" target="_blank" rel="noopener" style="margin-top:14px">@novra_officiel</a>
+        </div>
+
+        <div class="contact-aside">
+          <h3 class="display-4" style="margin-bottom:6px">Informations utiles</h3>
+          <div class="accordion" style="margin-top:16px">
+            <div class="accordion-item" id="livraison">
+              <button class="accordion-trigger" type="button" aria-expanded="false">Livraison et retours<i></i></button>
+              <div class="accordion-panel"><div>
+                Expédition sous 24 h ouvrées. Livraison en 24-48 h en France métropolitaine, offerte dès 80 € d'achat.
+                Retours acceptés sous 30 jours, article non porté et étiquette d'origine attachée.
+              </div></div>
+            </div>
+            <div class="accordion-item" id="tailles">
+              <button class="accordion-trigger" type="button" aria-expanded="false">Guide des tailles<i></i></button>
+              <div class="accordion-panel"><div>
+                Nos pièces taillent normalement. En cas d'hésitation entre deux tailles, choisissez la taille supérieure
+                pour un tombé plus ample. Le tableau détaillé est disponible sur chaque fiche produit.
+              </div></div>
+            </div>
+            <div class="accordion-item" id="faq">
+              <button class="accordion-trigger" type="button" aria-expanded="false">Questions fréquentes<i></i></button>
+              <div class="accordion-panel"><div>
+                <ul>
+                  <li>Puis-je modifier ma commande ? Contactez-nous dans l'heure suivant la validation.</li>
+                  <li>Livrez-vous à l'international ? France, Belgique, Suisse et Luxembourg pour le moment.</li>
+                  <li>Comment entretenir mes pièces ? Lavage à 30 °C, sans adoucissant, séchage à l'air libre.</li>
+                </ul>
+              </div></div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<div id="footer-root"></div>
+
+<script src="js/products.js" defer></script>
+<script src="js/cart.js" defer></script>
+<script src="js/main.js" defer></script>
+<script src="js/contact.js" defer></script>
+</body>
+</html>

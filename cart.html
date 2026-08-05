@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panier — NOVRA</title>
+<meta name="description" content="Votre panier NOVRA : vérifiez vos articles, vos tailles et vos quantités avant de passer commande.">
+<link rel="canonical" href="https://www.novra.fr/cart.html">
+<meta name="robots" content="noindex, follow">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" href="assets/web/logo/favicon.ico" sizes="any">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/responsive.css">
+<link rel="stylesheet" href="css/animations.css">
+</head>
+
+<body data-page="shop" class="has-solid-header">
+<a class="skip-link" href="#main">Aller au contenu</a>
+<div id="header-root"></div>
+
+<main id="main">
+  <div class="container">
+    <p class="breadcrumb" style="padding-top:34px"><a href="index.html">Accueil</a><span>/</span>Panier</p>
+    <h1 class="display-2">Panier</h1>
+
+    <div class="cart-page">
+      <div id="cart-page-lines"></div>
+
+      <aside class="cart-summary" id="cart-page-summary" hidden>
+        <h2 class="display-4">Récapitulatif</h2>
+        <div class="promo-row">
+          <label class="sr-only" for="promo-code">Code promotionnel</label>
+          <input type="text" id="promo-code" placeholder="Code promo" autocomplete="off">
+          <button type="button" id="promo-apply">Appliquer</button>
+        </div>
+        <p class="form-feedback" id="promo-feedback" role="status" aria-live="polite"></p>
+        <div class="totals" id="cart-page-totals"></div>
+        <a class="btn btn-block" href="checkout.html">Passer la commande</a>
+        <a class="btn btn-outline btn-block" style="margin-top:10px" href="marketplace.html">Continuer mes achats</a>
+      </aside>
+    </div>
+  </div>
+
+  <section class="section-sm section-grey" id="cart-related" hidden>
+    <div class="container">
+      <h2 class="display-3" style="margin-bottom:40px">Vous aimerez aussi</h2>
+      <div class="product-grid" id="cart-related-grid"></div>
+    </div>
+  </section>
+</main>
+
+<div id="footer-root"></div>
+
+<script src="js/products.js" defer></script>
+<script src="js/cart.js" defer></script>
+<script src="js/main.js" defer></script>
+</body>
+</html>

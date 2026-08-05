@@ -1,0 +1,12 @@
+# Médias originaux du client (~2,2 Go, dont une vidéo de 118 Mo)
+# GitHub refuse tout fichier de plus de 100 Mo : ces sources restent en local.
+# Seules les versions web optimisées (assets/web/, 24 Mo) sont versionnées.
+assets/*
+!assets/web/
+
+# Système / éditeurs
+Thumbs.db
+desktop.ini
+.DS_Store
+node_modules/
+*.log

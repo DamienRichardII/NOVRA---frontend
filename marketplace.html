@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boutique NOVRA — Vêtements et accessoires de sport techniques</title>
+<meta name="description" content="Découvrez toute la collection NOVRA : t-shirts performance, polos tech, ensembles training, pantalons techniques, vestes coupe-vent et casquettes running.">
+<link rel="canonical" href="https://www.novra.fr/marketplace.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="NOVRA">
+<meta property="og:title" content="Boutique NOVRA">
+<meta property="og:description" content="Toute la collection NOVRA : activewear technique pour l'entraînement, le running et le quotidien.">
+<meta property="og:url" content="https://www.novra.fr/marketplace.html">
+<meta property="og:image" content="https://www.novra.fr/assets/web/vitrine/4o8a9733.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" href="assets/web/logo/favicon.ico" sizes="any">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/responsive.css">
+<link rel="stylesheet" href="css/animations.css">
+</head>
+
+<body data-page="shop" class="has-solid-header">
+<a class="skip-link" href="#main">Aller au contenu</a>
+<div id="header-root"></div>
+
+<main id="main">
+
+  <section class="page-hero page-hero--shop" id="shop-hero">
+    <div class="page-hero__media">
+      <img class="page-hero__image" id="shop-hero-image" src="assets/web/vitrine/4o8a9733.jpg" alt=""
+           width="1400" height="933" fetchpriority="high">
+    </div>
+    <div class="page-hero__overlay"></div>
+    <div class="container">
+      <p class="breadcrumb"><a href="index.html">Accueil</a><span>/</span>Boutique</p>
+      <h1 class="display-2">Boutique</h1>
+      <p>Toute la collection NOVRA. Des pièces techniques pensées pour l'entraînement, le running et le quotidien.</p>
+    </div>
+  </section>
+
+  <div class="container">
+    <div class="shop-toolbar">
+      <button class="filter-toggle" type="button" data-filters-toggle aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+        Filtres
+      </button>
+      <span class="result-count" id="result-count" aria-live="polite"></span>
+      <div class="sort-wrap">
+        <span>Trier par</span>
+        <label class="sr-only" for="sort-select">Trier les produits</label>
+        <select id="sort-select">
+          <option value="new">Nouveautés</option>
+          <option value="price-asc">Prix croissant</option>
+          <option value="price-desc">Prix décroissant</option>
+          <option value="name">Nom de A à Z</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="shop-layout">
+
+      <aside class="filters" id="filters" aria-label="Filtres produits">
+        <div class="filters-head">
+          <h2 class="display-4">Filtres</h2>
+          <button class="icon-btn" type="button" data-filters-close aria-label="Fermer les filtres" style="color:var(--black)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+
+        <div class="filter-group">
+          <h3>Catégories</h3>
+          <div class="filter-list" id="filter-categories"></div>
+        </div>
+
+        <div class="filter-group">
+          <h3>Genre</h3>
+          <div class="filter-list" id="filter-genders"></div>
+        </div>
+
+        <div class="filter-group">
+          <h3>Taille</h3>
+          <div class="chip-row" id="filter-sizes"></div>
+        </div>
+
+        <div class="filter-group">
+          <h3>Couleur</h3>
+          <div class="color-row" id="filter-colors"></div>
+        </div>
+
+        <div class="filter-group">
+          <h3>Prix maximum</h3>
+          <input class="price-range" type="range" id="filter-price" min="30" max="130" step="5" value="130" aria-label="Prix maximum">
+          <div class="price-values"><span>30 €</span><span id="price-max-label">130 €</span></div>
+        </div>
+
+        <div class="filter-group">
+          <h3>Disponibilité</h3>
+          <label class="check"><input type="checkbox" id="filter-stock"> En stock uniquement</label>
+          <label class="check"><input type="checkbox" id="filter-new"> Nouveautés</label>
+        </div>
+
+        <button class="btn btn-outline btn-block" type="button" id="reset-filters">Réinitialiser</button>
+      </aside>
+
+      <div>
+        <div class="product-grid" id="shop-grid"></div>
+        <div class="empty-state" id="empty-state" hidden>
+          <h3 class="display-4">Aucun produit ne correspond</h3>
+          <p>Modifiez vos filtres ou explorez l'ensemble de la collection.</p>
+          <button class="btn btn-outline" type="button" id="reset-filters-empty">Réinitialiser les filtres</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<div id="footer-root"></div>
+
+<script src="js/products.js" defer></script>
+<script src="js/cart.js" defer></script>
+<script src="js/main.js" defer></script>
+<script src="js/marketplace.js" defer></script>
+</body>
+</html>

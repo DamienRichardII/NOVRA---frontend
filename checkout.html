@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commande — NOVRA</title>
+<meta name="description" content="Finalisez votre commande NOVRA : coordonnées, livraison et récapitulatif.">
+<link rel="canonical" href="https://www.novra.fr/checkout.html">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" href="assets/web/logo/favicon.ico" sizes="any">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/responsive.css">
+<link rel="stylesheet" href="css/animations.css">
+</head>
+
+<body data-page="shop" class="has-solid-header">
+<a class="skip-link" href="#main">Aller au contenu</a>
+<div id="header-root"></div>
+
+<main id="main">
+  <div class="container" id="checkout-view">
+    <p class="breadcrumb" style="padding-top:34px"><a href="index.html">Accueil</a><span>/</span><a href="cart.html">Panier</a><span>/</span>Commande</p>
+    <h1 class="display-2">Commande</h1>
+
+    <form class="checkout-layout" id="checkout-form" novalidate>
+      <div>
+
+        <section class="checkout-step">
+          <h2><span class="step-num">01</span>Coordonnées</h2>
+          <div class="field-row">
+            <div class="field">
+              <label for="firstname">Prénom</label>
+              <input type="text" id="firstname" name="firstname" autocomplete="given-name" required>
+              <span class="field-error"></span>
+            </div>
+            <div class="field">
+              <label for="lastname">Nom</label>
+              <input type="text" id="lastname" name="lastname" autocomplete="family-name" required>
+              <span class="field-error"></span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="email">Adresse e-mail</label>
+            <input type="email" id="email" name="email" autocomplete="email" required>
+            <span class="field-error"></span>
+          </div>
+          <div class="field">
+            <label for="phone">Téléphone</label>
+            <input type="tel" id="phone" name="phone" autocomplete="tel" required>
+            <span class="field-error"></span>
+          </div>
+        </section>
+
+        <section class="checkout-step">
+          <h2><span class="step-num">02</span>Adresse de livraison</h2>
+          <div class="field">
+            <label for="address">Adresse</label>
+            <input type="text" id="address" name="address" autocomplete="address-line1" required>
+            <span class="field-error"></span>
+          </div>
+          <div class="field">
+            <label for="address2">Complément d'adresse (facultatif)</label>
+            <input type="text" id="address2" name="address2" autocomplete="address-line2">
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="zip">Code postal</label>
+              <input type="text" id="zip" name="zip" autocomplete="postal-code" inputmode="numeric" required>
+              <span class="field-error"></span>
+            </div>
+            <div class="field">
+              <label for="city">Ville</label>
+              <input type="text" id="city" name="city" autocomplete="address-level2" required>
+              <span class="field-error"></span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="country">Pays</label>
+            <select id="country" name="country">
+              <option value="FR">France</option>
+              <option value="BE">Belgique</option>
+              <option value="CH">Suisse</option>
+              <option value="LU">Luxembourg</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="checkout-step">
+          <h2><span class="step-num">03</span>Mode de livraison</h2>
+          <label class="radio-card is-selected">
+            <input type="radio" name="shipping" value="standard" checked>
+            <span><strong>Livraison standard</strong><span>24-48 h ouvrées</span></span>
+            <span class="price" data-shipping-standard></span>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="shipping" value="express">
+            <span><strong>Livraison express</strong><span>24 h, commande avant 12 h</span></span>
+            <span class="price">9,90 €</span>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="shipping" value="pickup">
+            <span><strong>Retrait en point relais</strong><span>2-4 jours ouvrés</span></span>
+            <span class="price">2,90 €</span>
+          </label>
+        </section>
+
+        <section class="checkout-step">
+          <h2><span class="step-num">04</span>Paiement</h2>
+          <label class="radio-card is-selected">
+            <input type="radio" name="payment" value="card" checked>
+            <span><strong>Carte bancaire</strong><span>Visa, Mastercard, CB</span></span>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="payment" value="paypal">
+            <span><strong>PayPal</strong><span>Redirection vers votre compte</span></span>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="payment" value="transfer">
+            <span><strong>Virement bancaire</strong><span>Expédition à réception du paiement</span></span>
+          </label>
+
+          <p class="payment-note">
+            Démonstration : aucun paiement n'est réellement encaissé sur cette version du site.
+            L'intégration d'une solution de paiement (Stripe, SumUp ou équivalent) est prévue dans <code>js/checkout.js</code>.
+          </p>
+
+          <label class="check" style="margin-top:10px">
+            <input type="checkbox" id="terms" name="terms" required>
+            <span>J'accepte les <a href="cgv.html" style="text-decoration:underline">conditions générales de vente</a> et la <a href="politique-confidentialite.html" style="text-decoration:underline">politique de confidentialité</a>.</span>
+          </label>
+          <span class="field-error" id="terms-error"></span>
+
+          <button class="btn btn-block" type="submit" style="margin-top:26px">Valider la commande</button>
+        </section>
+
+      </div>
+
+      <aside class="summary-box">
+        <h2 class="display-4" style="margin-bottom:20px">Votre commande</h2>
+        <div id="checkout-lines"></div>
+        <div class="totals" id="checkout-totals" style="margin-top:22px"></div>
+        <a class="link-underline" href="cart.html">Modifier le panier</a>
+      </aside>
+    </form>
+  </div>
+
+  <!-- Confirmation -->
+  <div class="container" id="confirmation-view" hidden>
+    <div class="confirmation">
+      <div class="confirmation-mark"><svg viewBox="0 0 24 24"><path d="M5 13l4.5 4.5L19 7"/></svg></div>
+      <h1 class="display-3">Commande confirmée</h1>
+      <p class="order-ref" id="order-ref"></p>
+      <p class="lead" style="margin:0 auto 10px">Merci pour votre confiance. Un récapitulatif a été préparé pour l'adresse <strong id="order-email"></strong>.</p>
+      <p style="color:var(--grey-500);font-size:.88rem">Simulation front-end : aucun paiement n'a été encaissé et aucune donnée n'a été transmise.</p>
+      <div id="order-summary" style="margin:34px 0;text-align:left"></div>
+      <a class="btn" href="marketplace.html">Retour à la boutique</a>
+    </div>
+  </div>
+</main>
+
+<div id="footer-root"></div>
+
+<script src="js/products.js" defer></script>
+<script src="js/cart.js" defer></script>
+<script src="js/main.js" defer></script>
+<script src="js/checkout.js" defer></script>
+</body>
+</html>
