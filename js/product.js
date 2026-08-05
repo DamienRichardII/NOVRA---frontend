@@ -95,7 +95,7 @@ function updateSeo(p) {
   const desc = document.querySelector('meta[name="description"]');
   if (desc) desc.setAttribute('content', p.description.slice(0, 155));
   const canonical = document.querySelector('link[rel="canonical"]');
-  if (canonical) canonical.setAttribute('href', 'https://www.novra.fr/product.html?id=' + p.id);
+  if (canonical) canonical.setAttribute('href', 'https://novra-frontend.vercel.app/product.html?id=' + p.id);
 
   const ld = document.createElement('script');
   ld.type = 'application/ld+json';

@@ -3,6 +3,9 @@
 # Seules les versions web optimisées (assets/web/, 24 Mo) sont versionnées.
 assets/*
 !assets/web/
+!assets/icons/
+!assets/novra-social-share-1200x630.png
+!assets/novra-favicon-512x512.png
 
 # Système / éditeurs
 Thumbs.db
