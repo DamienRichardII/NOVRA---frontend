@@ -354,6 +354,13 @@ function initNewsletter() {
 function initHeroVideo() {
   const video = document.querySelector('.hero-media video');
   if (!video) return;
+
+  /* iOS : lecture intégrée obligatoire, sans son et sans plein écran */
+  video.muted = true;
+  video.playsInline = true;
+  video.setAttribute('playsinline', '');
+  video.setAttribute('webkit-playsinline', '');
+  video.controls = false;
   const fallback = function () {
     const poster = video.getAttribute('poster');
     if (!poster) return;
