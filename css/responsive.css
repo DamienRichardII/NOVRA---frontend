@@ -111,10 +111,17 @@
     background: linear-gradient(to bottom, rgba(10,10,10,.55) 0%, rgba(10,10,10,0) 18%, rgba(10,10,10,0) 62%, rgba(10,10,10,.6) 100%);
   }
 
-  .hero-inner { padding-bottom: 64px; text-align: center; }
-  .hero-logo-title { margin-bottom: 30px; }
-  .hero-main-logo { width: min(74vw, 340px); margin-left: auto; margin-right: auto; }
-  .hero-actions { justify-content: center; }
+  /* Logo superposé masqué sur mobile : la vidéo affiche déjà le logo animé
+     et le header le reprend. On masque le conteneur ET l'image pour ne pas
+     laisser la marge basse du titre derrière un élément invisible.        */
+  .hero-logo-title,
+  .hero-main-logo { display: none; }
+
+  .hero-inner {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
+    text-align: center;
+  }
+  .hero-actions { justify-content: center; margin-top: 0; }
   .hero-actions .btn { flex: 1; min-width: 0; }
 
   .brand { padding: 8px 13px; }
@@ -170,7 +177,6 @@
 /* ------------------------------- ≤ 430 px -------------------------------- */
 @media (max-width: 430px) {
   .display-1 { font-size: clamp(2.6rem, 14vw, 3.6rem); }
-  .hero-main-logo { width: min(78vw, 280px); }
   .hero-actions { flex-direction: column; align-items: stretch; }
   .hero-actions .btn { width: 100%; }
   .stats { grid-template-columns: 1fr; }
