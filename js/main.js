@@ -352,28 +352,55 @@ function initNewsletter() {
 
 /* ---------------------------- Vidéo de secours ---------------------------- */
 function initHeroVideo() {
-  const video = document.querySelector('.hero-media video');
+  const video = document.querySelector('.hero-video');
   if (!video) return;
 
-  /* iOS : lecture intégrée obligatoire, sans son et sans plein écran */
+  /* iOS : lecture intégrée, muette, en boucle, sans interface native */
   video.muted = true;
+  video.defaultMuted = true;
+  video.autoplay = true;
+  video.loop = true;
   video.playsInline = true;
+  video.controls = false;
+  video.setAttribute('muted', '');
+  video.setAttribute('autoplay', '');
   video.setAttribute('playsinline', '');
   video.setAttribute('webkit-playsinline', '');
-  video.controls = false;
-  const fallback = function () {
+  video.removeAttribute('controls');
+
+  const tryToPlay = function () {
+    const playPromise = video.play();
+    if (playPromise !== undefined && typeof playPromise.catch === 'function') {
+      /* Lecture refusée (économie d'énergie, préférences système) :
+         le poster NOVRA reste affiché, aucun bouton Play n'est ajouté. */
+      playPromise.catch(function () {});
+    }
+  };
+
+  if (video.readyState >= 2) {
+    tryToPlay();
+  } else {
+    video.addEventListener('loadeddata', tryToPlay, { once: true });
+    video.addEventListener('canplay', tryToPlay, { once: true });
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && video.paused) tryToPlay();
+  });
+
+  window.addEventListener('pageshow', function () {
+    if (video.paused) tryToPlay();
+  });
+
+  /* Si le fichier est illisible, on retombe sur le poster en image fixe */
+  video.addEventListener('error', function () {
     const poster = video.getAttribute('poster');
     if (!poster) return;
     const img = document.createElement('img');
     img.src = poster;
-    img.alt = 'Athlètes NOVRA en action';
+    img.alt = '';
     video.replaceWith(img);
-  };
-  video.addEventListener('error', fallback);
-  const play = video.play();
-  if (play && typeof play.catch === 'function') {
-    play.catch(function () { /* lecture bloquée : le poster reste affiché */ });
-  }
+  });
 }
 
 /* --------------------------------- Init ---------------------------------- */

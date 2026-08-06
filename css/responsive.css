@@ -94,9 +94,14 @@
      était tronqué. On passe donc en `contain` : la vidéo entière est
      affichée, remontée dans le haut du hero, et les zones libres se
      fondent dans le fond noir du hero.                                  */
+  /* Le header est en position fixed : le hero doit occuper toute la hauteur
+     visible. `svh` correspond au plus petit viewport (barres affichées) et
+     laissait apparaître la section suivante dès que les barres se rétractent.
+     `dvh` suit la hauteur réellement visible ; vh et svh servent de repli. */
   .hero {
+    min-height: 100vh;
     min-height: 100svh;
-    height: auto;
+    min-height: 100dvh;
     background: var(--black);
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);

@@ -322,6 +322,20 @@ body.has-solid-header { padding-top: var(--header-h); }
   background: var(--black);
 }
 .hero-media { position: absolute; inset: 0; background: var(--black); overflow: hidden; }
+
+/* Aucune interface native sur la vidéo du hero (bouton Play iOS compris).
+   Ne cible que .hero-video : les autres vidéos du site ne sont pas affectées. */
+.hero-video::-webkit-media-controls,
+.hero-video::-webkit-media-controls-panel,
+.hero-video::-webkit-media-controls-start-playback-button,
+.hero-video::-webkit-media-controls-play-button,
+.hero-video::-webkit-media-controls-overlay-play-button {
+  display: none !important;
+  -webkit-appearance: none;
+  appearance: none;
+  opacity: 0 !important;
+}
+.hero-video { pointer-events: none; }
 .hero-media video, .hero-media img {
   display: block;
   width: 100%; height: 100%;
