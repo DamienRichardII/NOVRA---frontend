@@ -73,21 +73,11 @@
       <video class="hero-video" autoplay muted loop playsinline webkit-playsinline preload="auto"
              poster="assets/web/video/novra-hero-poster.jpg"
              aria-label="Film de marque NOVRA">
-        <source id="hero-video-source" src="assets/web/video/novra-hero.mp4" type="video/mp4">
+        <!-- Source unique, identique sur tous les écrans. Ni attribut media,
+             ni changement de source en JavaScript : les deux cassent
+             l'autoplay sur Safari iOS. -->
+        <source src="assets/web/video/novra-hero.mp4" type="video/mp4">
       </video>
-      <script>
-        /* Version allégée sur mobile. Le choix se fait ici plutôt qu'avec
-           l'attribut media d'une balise <source> : Safari iOS le gère mal
-           et se retrouve alors sans source lisible, ce qui bloque l'autoplay
-           et fait apparaître le bouton Play natif. */
-        (function () {
-          if (window.innerWidth > 767) return;
-          var s = document.getElementById('hero-video-source');
-          if (!s) return;
-          s.src = 'assets/web/video/novra-hero-mobile.mp4';
-          s.parentNode.load();
-        })();
-      </script>
     </div>
     <div class="hero-overlay"></div>
 

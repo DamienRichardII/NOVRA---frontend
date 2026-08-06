@@ -335,7 +335,6 @@ body.has-solid-header { padding-top: var(--header-h); }
   appearance: none;
   opacity: 0 !important;
 }
-.hero-video { pointer-events: none; }
 .hero-media video, .hero-media img {
   display: block;
   width: 100%; height: 100%;

@@ -392,6 +392,21 @@ function initHeroVideo() {
     if (video.paused) tryToPlay();
   });
 
+  /* Mode économie d'énergie iOS : l'autoplay est refusé par le système,
+     quelle que soit la configuration de la balise. La première interaction
+     de l'utilisateur (toucher, scroll) lève ce blocage. */
+  const resumeOnGesture = function () {
+    if (video.paused) tryToPlay();
+    if (!video.paused) {
+      ['touchstart', 'pointerdown', 'scroll'].forEach(function (evt) {
+        document.removeEventListener(evt, resumeOnGesture);
+      });
+    }
+  };
+  ['touchstart', 'pointerdown', 'scroll'].forEach(function (evt) {
+    document.addEventListener(evt, resumeOnGesture, { passive: true });
+  });
+
   /* Si le fichier est illisible, on retombe sur le poster en image fixe */
   video.addEventListener('error', function () {
     const poster = video.getAttribute('poster');
