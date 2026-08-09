@@ -100,32 +100,6 @@ function renderFilters() {
   }).join('');
 }
 
-/* Visuel et point focal du hero selon la sélection (Homme / Femme / Accessoires) */
-const HERO_VARIANTS = {
-  homme:       { cls: 'page-hero--men',         img: 'assets/web/vitrine/4o8a0049.jpg', w: 933, h: 1400 },
-  femme:       { cls: 'page-hero--women',       img: 'assets/web/veste-corail/dsc02392.jpg', w: 933, h: 1400 },
-  accessoires: { cls: 'page-hero--accessories', img: 'assets/web/vitrine/4o8a9879.jpg', w: 933, h: 1400 }
-};
-
-function applyHeroVariant() {
-  const hero = document.getElementById('shop-hero');
-  const img = document.getElementById('shop-hero-image');
-  if (!hero || !img) return;
-
-  let key = null;
-  if (state.gender === 'homme' || state.gender === 'femme') key = state.gender;
-  else if (state.category === 'accessoires') key = 'accessoires';
-
-  const variant = HERO_VARIANTS[key];
-  if (!variant) return;
-
-  hero.classList.remove('page-hero--shop');
-  hero.classList.add(variant.cls);
-  img.src = variant.img;
-  img.width = variant.w;
-  img.height = variant.h;
-}
-
 function resetFilters() {
   state.category = 'all';
   state.gender = 'all';
@@ -154,7 +128,6 @@ document.addEventListener('DOMContentLoaded', function () {
   if (params.get('new')) state.onlyNew = true;
 
   renderFilters();
-  applyHeroVariant();
 
   if (state.onlyNew) document.getElementById('filter-new').checked = true;
   if (state.query) {

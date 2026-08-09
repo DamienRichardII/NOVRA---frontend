@@ -33,11 +33,11 @@
 
   /* Héros internes — tablette */
   .page-hero { min-height: 520px; }
-  .page-hero--shop .page-hero__image { object-position: 50% 20%; }
+  .page-hero__slide:nth-child(1) { object-position: 50% 20%; }
+  .page-hero__slide:nth-child(2) { object-position: 50% 32%; }
+  .page-hero__slide:nth-child(3) { object-position: 50% 34%; }
+
   .page-hero--mission .page-hero__image { object-position: 58% 28%; }
-  .page-hero--men .page-hero__image { object-position: 50% 16%; }
-  .page-hero--women .page-hero__image { object-position: 50% 12%; }
-  .page-hero--accessories .page-hero__image { object-position: 50% 18%; }
 
   .split { grid-template-columns: 1fr; }
   .split.is-reverse .split-media { order: -1; }
@@ -138,11 +138,13 @@
   .page-hero__overlay {
     background: linear-gradient(to top, rgba(10,10,10,.9) 0%, rgba(10,10,10,.5) 38%, rgba(10,10,10,.1) 72%, rgba(10,10,10,0) 100%);
   }
-  .page-hero--shop .page-hero__image { object-position: 30% 50%; }
+  /* Diaporama boutique — mobile : le format vertical des photos est exploité
+     à fond, on peut donc descendre le point focal et montrer plus de produits */
+  .page-hero__slide:nth-child(1) { object-position: 50% 30%; }
+  .page-hero__slide:nth-child(2) { object-position: 50% 35%; }
+  .page-hero__slide:nth-child(3) { object-position: 50% 40%; }
+
   .page-hero--mission .page-hero__image { object-position: 55% 30%; }
-  .page-hero--men .page-hero__image { object-position: 42% 18%; }
-  .page-hero--women .page-hero__image { object-position: 50% 14%; }
-  .page-hero--accessories .page-hero__image { object-position: 50% 20%; }
 
   .feature-list { grid-template-columns: 1fr; gap: 26px; }
 
@@ -210,6 +212,144 @@
   border-bottom: 1px solid var(--line);
 }
 .filters-head h2 { font-size: 1.1rem; letter-spacing: .12em; }
+
+/* =========================================================================
+   HOME MOBILE — composition éditoriale dédiée
+   N'affecte que la page d'accueil (body[data-page="home"]) sous 768 px.
+   Le desktop et les autres pages ne sont pas concernés.
+   ========================================================================= */
+@media (max-width: 768px) {
+
+  /* --- Rythme de lecture : hero, marque, campagnes, shop, storytelling --- */
+  body[data-page="home"] main { display: flex; flex-direction: column; }
+  body[data-page="home"] [data-home="hero"]        { order: 1; }
+  body[data-page="home"] [data-home="marque"]      { order: 2; }
+  body[data-page="home"] [data-home="collections"] { order: 3; }
+  body[data-page="home"] [data-home="categories"]  { order: 4; }
+  body[data-page="home"] [data-home="produits"]    { order: 5; }
+  body[data-page="home"] [data-home="boutique"]    { order: 6; }
+  body[data-page="home"] [data-home="techno"]      { order: 7; }
+  body[data-page="home"] [data-home="mission"]     { order: 8; }
+  body[data-page="home"] [data-home="adn"]         { order: 9; }
+  body[data-page="home"] [data-home="valeurs"]     { order: 10; }
+  body[data-page="home"] [data-home="communaute"]  { order: 11; }
+  body[data-page="home"] [data-home="chiffres"]    { order: 12; }
+  body[data-page="home"] [data-home="newsletter"]  { order: 13; }
+  body[data-page="home"] [data-home="cta"]         { order: 14; }
+
+  .home-mobile { display: block; }
+
+  /* --- Blocs campagne pleine largeur ---------------------------------- */
+  .campaign {
+    position: relative;
+    min-height: 82svh;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+    background: var(--black);
+    color: var(--white);
+  }
+  .campaign-media { position: absolute; inset: 0; }
+  .campaign-media img { width: 100%; height: 100%; object-fit: cover; }
+  .campaign-body {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    padding: 130px var(--gutter) 46px;
+    background: linear-gradient(to top, rgba(10,10,10,.94) 0%, rgba(10,10,10,.6) 42%, rgba(10,10,10,0) 100%);
+  }
+  .campaign-body .eyebrow { color: var(--white-45); margin-bottom: 10px; }
+  .campaign-body h2 { font-size: clamp(2rem, 9vw, 3.2rem); margin-bottom: 14px; }
+  .campaign-body p { color: var(--white-70); font-size: .95rem; margin: 0 0 24px; max-width: 26ch; }
+
+  /* --- Collections Homme / Femme / Accessoires en campagnes ------------ */
+  body[data-page="home"] [data-home="collections"] { padding: 0; }
+  body[data-page="home"] [data-home="collections"] > .container { display: none; }
+  body[data-page="home"] .collections { gap: 0; }
+  body[data-page="home"] .collection-card { min-height: 82svh; }
+  body[data-page="home"] .collection-card img { opacity: .92; }
+  body[data-page="home"] .collection-body {
+    padding: 130px var(--gutter) 46px;
+    background: linear-gradient(to top, rgba(10,10,10,.94) 0%, rgba(10,10,10,.6) 42%, rgba(10,10,10,0) 100%);
+  }
+  body[data-page="home"] .collection-body h3 { font-size: clamp(2rem, 9vw, 3.2rem); margin-bottom: 18px; }
+  body[data-page="home"] .collection-body .link-underline {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 15px 34px;
+    border: 0;
+    background: var(--white); color: var(--black);
+    font-size: .72rem; letter-spacing: .18em;
+  }
+  /* Points focaux : visage et silhouette conservés sur chaque campagne */
+  body[data-page="home"] .collection-card:nth-child(1) img { object-position: 50% 26%; }
+  body[data-page="home"] .collection-card:nth-child(2) img { object-position: 50% 22%; }
+  body[data-page="home"] .collection-card:nth-child(3) img { object-position: 50% 24%; }
+
+  /* --- Sections éditoriales image + texte ------------------------------ */
+  body[data-page="home"] .split-media { min-height: 64svh; }
+  body[data-page="home"] .split-text { padding: 40px var(--gutter) 48px; }
+
+  /* --- Grille de catégories -------------------------------------------- */
+  .cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .cat-card {
+    position: relative; display: block;
+    aspect-ratio: 3 / 4; overflow: hidden;
+    background: var(--grey-50);
+  }
+  .cat-card img { width: 100%; height: 100%; object-fit: cover; }
+  .cat-card span {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 34px 14px 14px;
+    font-family: var(--font-display);
+    font-size: 1.1rem; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--white);
+    background: linear-gradient(to top, rgba(10,10,10,.88), rgba(10,10,10,0));
+  }
+
+  /* --- Respiration resserrée entre les blocs ---------------------------- */
+  body[data-page="home"] .section { padding: 56px 0; }
+  body[data-page="home"] .section-sm { padding: 44px 0; }
+  body[data-page="home"] [data-home="collections"],
+  body[data-page="home"] [data-home="boutique"] { padding: 0; }
+
+  /* --- Carrousel communauté : lecture tactile pleine largeur ------------ */
+  body[data-page="home"] [data-home="communaute"] .carousel {
+    margin: 0 calc(var(--gutter) * -1);
+    padding: 0 var(--gutter) 8px;
+    scroll-padding-left: var(--gutter);
+  }
+  body[data-page="home"] [data-home="communaute"] .carousel figure { flex-basis: 72vw; }
+  body[data-page="home"] .carousel-nav { display: none; }
+}
+
+/* --------------------------- Footer mobile ------------------------------- */
+@media (max-width: 768px) {
+  .footer-col h3 {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%;
+    margin: 0;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--line-dark);
+    cursor: pointer;
+    text-align: left;
+  }
+  .footer-col h3::after {
+    content: '';
+    width: 9px; height: 9px;
+    border-right: 1px solid currentColor;
+    border-bottom: 1px solid currentColor;
+    transform: rotate(45deg) translate(-2px, -2px);
+    transition: transform .35s var(--ease);
+    flex: none;
+  }
+  .footer-col[data-open="true"] h3::after { transform: rotate(-135deg) translate(-3px, -3px); }
+
+  .footer-col .footer-col-links { max-height: 0; overflow: hidden; transition: max-height .4s var(--ease); }
+  .footer-col a { padding: 9px 0; }
+  .footer-top { display: block; padding-bottom: 34px; }
+  .footer-brand { margin-bottom: 28px; }
+  .site-footer { padding: 56px 0 34px; }
+}
 
 /* ------------- Tablette en portrait : même contrainte de ratio ------------ */
 /* 768x1024 et équivalents : la vidéo horizontale serait tout autant rognée.  */

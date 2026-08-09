@@ -95,7 +95,7 @@ function renderFooter() {
   if (!root) return;
 
   const cols = [
-    { title: 'Marketplace', links: [
+    { title: 'Shop', links: [
       ['marketplace.html?gender=homme', 'Homme'],
       ['marketplace.html?gender=femme', 'Femme'],
       ['marketplace.html?category=accessoires', 'Accessoires'],
@@ -130,7 +130,9 @@ function renderFooter() {
           '</div>' +
           cols.map(function (c) {
             return '<div class="footer-col"><h3>' + c.title + '</h3>' +
-              c.links.map(function (l) { return '<a href="' + l[0] + '">' + l[1] + '</a>'; }).join('') +
+              '<div class="footer-col-links">' +
+                c.links.map(function (l) { return '<a href="' + l[0] + '">' + l[1] + '</a>'; }).join('') +
+              '</div>' +
             '</div>';
           }).join('') +
         '</div>' +
@@ -350,6 +352,90 @@ function initNewsletter() {
   });
 }
 
+/* ------------------------ Diaporama des héros internes --------------------- */
+/* Rotation lente en boucle infinie, crossfade CSS uniquement.
+   Un seul timer par page, jamais recréé : pas de dérive ni de doublon. */
+const SLIDE_DURATION = 30000;
+
+function initHeroSlideshow() {
+  document.querySelectorAll('.page-hero__slideshow').forEach(function (slideshow) {
+    if (slideshow.dataset.running) return;
+
+    const slides = Array.prototype.slice.call(slideshow.querySelectorAll('.page-hero__slide'));
+    if (slides.length <= 1) return;
+
+    slideshow.dataset.running = '1';
+
+    /* Les visuels sont chargés dès l'ouverture : aucune requête réseau
+       au moment du changement, donc aucune latence ni écran vide. */
+    slides.forEach(function (slide) {
+      const img = new Image();
+      img.src = slide.currentSrc || slide.src;
+    });
+
+    let index = 0;
+    setInterval(function () {
+      const previous = index;
+      index = (index + 1) % slides.length;
+      slides[previous].classList.remove('is-active');
+      slides[index].classList.add('is-active');
+    }, SLIDE_DURATION);
+  });
+}
+
+/* ------------------------ Footer accordéon (mobile) ----------------------- */
+function initFooterAccordion() {
+  const cols = document.querySelectorAll('.footer-col');
+  if (!cols.length || !window.matchMedia) return;
+  const mq = window.matchMedia('(max-width: 768px)');
+
+  function panelOf(col) { return col.querySelector('.footer-col-links'); }
+
+  function toggle(col) {
+    const title = col.querySelector('h3');
+    const panel = panelOf(col);
+    const open = col.dataset.open === 'true';
+    col.dataset.open = String(!open);
+    title.setAttribute('aria-expanded', String(!open));
+    panel.style.maxHeight = open ? '0px' : panel.scrollHeight + 'px';
+  }
+
+  /* Sur desktop les colonnes redeviennent de simples listes déroulées */
+  function apply(isMobile) {
+    cols.forEach(function (col) {
+      const title = col.querySelector('h3');
+      const panel = panelOf(col);
+      if (!title || !panel) return;
+      if (isMobile) {
+        title.setAttribute('role', 'button');
+        title.setAttribute('tabindex', '0');
+        title.setAttribute('aria-expanded', 'false');
+        col.dataset.open = 'false';
+        panel.style.maxHeight = '0px';
+      } else {
+        title.removeAttribute('role');
+        title.removeAttribute('tabindex');
+        title.removeAttribute('aria-expanded');
+        col.removeAttribute('data-open');
+        panel.style.maxHeight = '';
+      }
+    });
+  }
+
+  cols.forEach(function (col) {
+    const title = col.querySelector('h3');
+    if (!title) return;
+    title.addEventListener('click', function () { if (mq.matches) toggle(col); });
+    title.addEventListener('keydown', function (e) {
+      if (!mq.matches) return;
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(col); }
+    });
+  });
+
+  apply(mq.matches);
+  if (mq.addEventListener) mq.addEventListener('change', function (e) { apply(e.matches); });
+}
+
 /* ---------------------------- Vidéo de secours ---------------------------- */
 function initHeroVideo() {
   const video = document.querySelector('.hero-video');
@@ -433,6 +519,8 @@ document.addEventListener('DOMContentLoaded', function () {
   initAccordions();
   initNewsletter();
   initHeroVideo();
+  initHeroSlideshow();
+  initFooterAccordion();
 
   /* Délégation globale */
   document.addEventListener('click', function (e) {

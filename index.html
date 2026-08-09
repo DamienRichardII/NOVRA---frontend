@@ -68,7 +68,7 @@
 <main id="main">
 
   <!-- ================= HERO ================= -->
-  <section class="hero">
+  <section class="hero" data-home="hero">
     <div class="hero-media">
       <video class="hero-video" autoplay muted loop playsinline webkit-playsinline preload="auto"
              poster="assets/web/video/novra-hero-poster.jpg"
@@ -93,7 +93,7 @@
   </section>
 
   <!-- ============ 1. CONÇU POUR LA PERFORMANCE ============ -->
-  <section class="split">
+  <section class="split" data-home="marque">
     <div class="split-text">
       <span class="eyebrow">01 — La marque</span>
       <h2 class="display-2" data-reveal="mask">Conçu pour<br>la performance</h2>
@@ -108,7 +108,7 @@
   </section>
 
   <!-- ============ 2. PRODUITS MIS EN AVANT ============ -->
-  <section class="section">
+  <section class="section" data-home="produits">
     <div class="container">
       <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:52px">
         <div>
@@ -122,7 +122,7 @@
   </section>
 
   <!-- ============ 3. TECHNOLOGIE ============ -->
-  <section class="split is-reverse section-dark">
+  <section class="split is-reverse section-dark" data-home="techno">
     <div class="split-text">
       <span class="eyebrow">03 — Technologie</span>
       <h2 class="display-3" data-reveal="mask">Technologie au service<br>de votre performance</h2>
@@ -151,7 +151,7 @@
   </section>
 
   <!-- ============ 4. COLLECTIONS ============ -->
-  <section class="section-sm">
+  <section class="section-sm" data-home="collections">
     <div class="container" style="margin-bottom:40px">
       <span class="eyebrow">04 — Collections</span>
       <h2 class="display-3" data-reveal="mask">Trouvez votre équipement</h2>
@@ -181,8 +181,58 @@
     </div>
   </section>
 
+  <!-- ==== NOS ESSENTIELS — navigation par catégories (mobile uniquement) ==== -->
+  <section class="section-sm home-mobile" data-home="categories" aria-label="Nos catégories">
+    <div class="container">
+      <span class="eyebrow">Nos essentiels</span>
+      <h2 class="display-3" style="margin-bottom:26px" data-reveal="mask">Par catégorie</h2>
+      <div class="cat-grid">
+        <a class="cat-card" href="marketplace.html?category=t-shirts">
+          <img src="assets/web/tshirt-noir/dsc02335.jpg" alt="" width="600" height="800" loading="lazy">
+          <span>T-shirts</span>
+        </a>
+        <a class="cat-card" href="marketplace.html?category=polos">
+          <img src="assets/web/polo/dsc02307.jpg" alt="" width="600" height="800" loading="lazy">
+          <span>Polos</span>
+        </a>
+        <a class="cat-card" href="marketplace.html?category=ensembles">
+          <img src="assets/web/ensemble-menthe/dsc02317.jpg" alt="" width="600" height="800" loading="lazy">
+          <span>Ensembles</span>
+        </a>
+        <a class="cat-card" href="marketplace.html?category=pantalons">
+          <img src="assets/web/pantalon/dsc02384.jpg" alt="" width="600" height="800" loading="lazy">
+          <span>Pantalons</span>
+        </a>
+        <a class="cat-card" href="marketplace.html?category=vestes">
+          <img src="assets/web/veste-noir/dsc02364.jpg" alt="" width="600" height="800" loading="lazy">
+          <span>Vestes</span>
+        </a>
+        <a class="cat-card" href="marketplace.html?category=accessoires">
+          <img src="assets/web/casquette/dsc02336.jpg" alt="" width="600" height="800" loading="lazy">
+          <span>Accessoires</span>
+        </a>
+      </div>
+      <a class="btn btn-outline btn-block" style="margin-top:26px" href="marketplace.html">Tout afficher</a>
+    </div>
+  </section>
+
+  <!-- ==== L'UNIVERS NOVRA — boutique physique (mobile uniquement) ==== -->
+  <section class="campaign home-mobile" data-home="boutique">
+    <div class="campaign-media page-hero__slideshow" aria-hidden="true">
+      <img class="page-hero__slide is-active" src="assets/web/boutique/img_9463.jpg" alt="" width="853" height="1400" loading="lazy">
+      <img class="page-hero__slide" src="assets/web/boutique/img_9464.jpg" alt="" width="858" height="1400" loading="lazy">
+      <img class="page-hero__slide" src="assets/web/boutique/img_9465.jpg" alt="" width="845" height="1400" loading="lazy">
+    </div>
+    <div class="campaign-body">
+      <span class="eyebrow">L'univers NOVRA</span>
+      <h2 class="display-3">Une expérience<br>de marque</h2>
+      <p>Découvrez l'univers physique de NOVRA.</p>
+      <a class="btn btn-light" href="about.html">Découvrir</a>
+    </div>
+  </section>
+
   <!-- ============ 5. NOTRE MISSION ============ -->
-  <section class="split section-dark" id="mission">
+  <section class="split section-dark" id="mission" data-home="mission">
     <div class="split-media">
       <img src="assets/web/vitrine/4o8a0158.jpg" alt="Athlète NOVRA en veste coupe-vent noire" width="933" height="1400" loading="lazy" data-reveal="zoom">
     </div>
@@ -197,7 +247,7 @@
   </section>
 
   <!-- ============ 6. L'ADN NOVRA ============ -->
-  <section class="section section-dark" style="padding-top:0">
+  <section class="section section-dark" style="padding-top:0" data-home="adn">
     <div class="container">
       <span class="eyebrow">06 — ADN</span>
       <h2 class="display-3" style="margin-bottom:44px" data-reveal="mask">L'ADN NOVRA</h2>
@@ -232,7 +282,7 @@
   </section>
 
   <!-- ============ 7. NOS VALEURS ============ -->
-  <section class="section">
+  <section class="section" data-home="valeurs">
     <div class="container">
       <span class="eyebrow">07 — Valeurs</span>
       <h2 class="display-3" style="margin-bottom:52px" data-reveal="mask">Nos valeurs</h2>
@@ -262,7 +312,7 @@
   </section>
 
   <!-- ============ 8. COMMUNAUTÉ ============ -->
-  <section class="section section-grey" data-carousel>
+  <section class="section section-grey" data-carousel data-home="communaute">
     <div class="container">
       <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:40px">
         <div>
@@ -291,7 +341,7 @@
   </section>
 
   <!-- ============ CHIFFRES ============ -->
-  <section class="section-sm">
+  <section class="section-sm" data-home="chiffres">
     <div class="container">
       <div class="stats">
         <div class="stat"><strong>100 %</strong><span>Matières techniques</span></div>
@@ -303,7 +353,7 @@
   </section>
 
   <!-- ============ 9. NEWSLETTER ============ -->
-  <section class="section section-dark" style="position:relative;overflow:hidden">
+  <section class="section section-dark" style="position:relative;overflow:hidden" data-home="newsletter">
     <img src="assets/web/vitrine/4o8a0110.jpg" alt="" aria-hidden="true"
          style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.22" loading="lazy" data-parallax=".08">
     <div class="container" style="position:relative">
@@ -322,7 +372,7 @@
   </section>
 
   <!-- ============ CTA FINAL ============ -->
-  <section class="section-sm" style="position:relative;background:var(--black);color:var(--white);text-align:center;overflow:hidden">
+  <section class="section-sm" data-home="cta" style="position:relative;background:var(--black);color:var(--white);text-align:center;overflow:hidden">
     <img src="assets/web/ensemble-anthracite/dsc02399.jpg" alt="" aria-hidden="true"
          style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.3" loading="lazy">
     <div class="container" style="position:relative;padding-top:60px;padding-bottom:60px">
