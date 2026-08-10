@@ -101,6 +101,7 @@ async function boot() {
   state.profile = profile;
   document.getElementById('login-view').hidden = true;
   document.getElementById('app-view').hidden = false;
+  window.scrollTo(0, 0);
   document.getElementById('me-name').textContent = profile.full_name || profile.email;
   document.getElementById('me-role').textContent = ({
     super_admin: 'Super admin', manager: 'Chef de projet',

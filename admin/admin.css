@@ -20,6 +20,12 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
+
+/* Un élément masqué doit l'être quelles que soient les règles d'affichage
+   qui le concernent : sans cela, .login { display: grid } l'emporte sur
+   l'attribut hidden et l'écran de connexion reste dans le flux. */
+[hidden] { display: none !important; }
+
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 14px; }
 img { max-width: 100%; display: block; }
 button { font: inherit; cursor: pointer; }
