@@ -48,10 +48,17 @@
 <!-- ================================ APP =============================== -->
 <div class="admin-app" id="app-view" hidden>
 
+  <div class="sb-overlay" id="sb-overlay" hidden></div>
+
   <aside class="admin-sidebar" id="sidebar">
-    <div class="sb-brand">
-      <img src="../assets/web/logo/novra-wordmark-hero.png" alt="NOVRA">
-      <span>ADMIN</span>
+    <div class="sb-brand" style="display:flex;align-items:flex-start;justify-content:space-between">
+      <div>
+        <img src="../assets/web/logo/novra-wordmark-hero.png" alt="NOVRA">
+        <span>ADMIN</span>
+      </div>
+      <button class="btn btn-icon sb-close" type="button" id="sb-close" aria-label="Fermer le menu">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
     </div>
     <nav class="sb-nav" id="sb-nav" aria-label="Navigation principale"></nav>
     <div class="sb-foot">

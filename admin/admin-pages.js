@@ -105,10 +105,10 @@ function pageDashboard() {
     ['users', 'Ajouter un client', '#clients']
   ].map(function (q) { return '<a class="qa" href="' + q[2] + '">' + icon(q[0]) + '<span>' + q[1] + '</span></a>'; }).join('');
 
-  return '<div style="margin-bottom:18px">' + demoFlag('Chiffres commerciaux de démonstration — le module Commandes n\'est pas encore relié à la base.') + '</div>' +
-    '<div class="kpi-row" style="margin-bottom:18px">' + kpis + '</div>' +
+  return '<div class="mb-18">' + demoFlag('Chiffres commerciaux de démonstration — le module Commandes n\'est pas encore relié à la base.') + '</div>' +
+    '<div class="kpi-row" class="mb-18">' + kpis + '</div>' +
 
-    '<div class="grid-main g-1-1-1" style="grid-template-columns:2.1fr 1.35fr 1.35fr;margin-bottom:18px">' +
+    '<div class="grid-main g-dash-top mb-18">' +
       '<section class="card chart-card">' +
         cardHead("Évolution du chiffre d'affaires", '<span class="chip">7 derniers jours ' + icon('chevronD', 'icon-sm') + '</span>') +
         '<div class="chart-box"><div class="chart-value">28 430,00 € ' + badge('+ 18,6 %', 'success', true) +
@@ -127,7 +127,7 @@ function pageDashboard() {
       '</section>' +
     '</div>' +
 
-    '<div class="grid-main g-1-1-1" style="margin-bottom:18px">' +
+    '<div class="grid-main g-1-1-1" class="mb-18">' +
       '<section class="card">' + cardHead('Dernières commandes', '<a class="card-link" href="#commandes">Voir toutes</a>') +
         '<div class="table-wrap"><table class="table"><thead><tr><th>Commande</th><th>Client</th><th>Date</th><th class="right">Montant</th><th class="right">Statut</th></tr></thead><tbody>' + orders + '</tbody></table></div>' +
       '</section>' +
@@ -145,8 +145,8 @@ function pageDashboard() {
 
     '<div class="grid-main g-1-1-1">' +
       '<section class="card">' + cardHead('Performance marketing', '<a class="card-link" href="#analytics">Voir le rapport</a>') +
-        '<div class="mk-grid" style="grid-template-columns:repeat(2,1fr)">' + marketing + '</div></section>' +
-      '<section class="card">' + cardHead('Actions rapides') + '<div class="qa-grid" style="grid-template-columns:repeat(3,1fr)">' + quick + '</div></section>' +
+        '<div class="mk-grid g-2">' + marketing + '</div></section>' +
+      '<section class="card">' + cardHead('Actions rapides') + '<div class="qa-grid g-3">' + quick + '</div></section>' +
       '<section class="card" id="dash-activity">' + cardHead('Activité récente', '<a class="card-link" href="#journal">Voir tout</a>') +
         '<div id="dash-activity-body"><div class="card-pad"><div class="skeleton skel-line"></div><div class="skeleton skel-line" style="width:70%"></div></div></div></section>' +
     '</div>';
@@ -156,14 +156,14 @@ function pageDashboard() {
 function pageOrders() {
   const rows = DEMO.orders.map(function (o, i) {
     return '<tr data-order="' + i + '"' + (i === 0 ? ' class="is-selected"' : '') + '>' +
-      '<td class="nowrap">' + esc(o.id) + '</td>' +
-      '<td><div class="t-title">' + esc(o.client) + '</div><div class="t-sub">' + esc(o.mail) + '</div></td>' +
-      '<td class="nowrap"><div>' + esc(o.date) + '</div><div class="t-sub">' + esc(o.hour) + '</div></td>' +
-      '<td class="nowrap"><div>' + money(o.total) + '</div><div class="t-sub">' + o.items + ' article' + (o.items > 1 ? 's' : '') + '</div></td>' +
-      '<td class="nowrap"><div>' + esc(o.pay) + '</div><div class="t-sub">' + esc(o.payMeta) + '</div></td>' +
-      '<td class="nowrap"><div>' + esc(o.ship) + '</div><div class="t-sub">' + esc(o.shipDate) + '</div></td>' +
-      '<td>' + badge(o.status, o.tone) + '</td>' +
-      '<td><div style="display:flex;gap:4px"><button class="btn btn-icon btn-sm" type="button" aria-label="Voir">' + icon('eye', 'icon-sm') + '</button>' +
+      '<td class="c-main nowrap">' + esc(o.id) + '</td>' +
+      '<td data-l="Client"><div class="t-title">' + esc(o.client) + '</div><div class="t-sub">' + esc(o.mail) + '</div></td>' +
+      '<td data-l="Date" class="nowrap"><div>' + esc(o.date) + '</div><div class="t-sub">' + esc(o.hour) + '</div></td>' +
+      '<td data-l="Total" class="nowrap"><div>' + money(o.total) + '</div><div class="t-sub">' + o.items + ' article' + (o.items > 1 ? 's' : '') + '</div></td>' +
+      '<td data-l="Paiement" class="nowrap"><div>' + esc(o.pay) + '</div><div class="t-sub">' + esc(o.payMeta) + '</div></td>' +
+      '<td data-l="Livraison" class="nowrap"><div>' + esc(o.ship) + '</div><div class="t-sub">' + esc(o.shipDate) + '</div></td>' +
+      '<td data-l="Statut">' + badge(o.status, o.tone) + '</td>' +
+      '<td data-l="Actions"><div style="display:flex;gap:4px"><button class="btn btn-icon btn-sm" type="button" aria-label="Voir">' + icon('eye', 'icon-sm') + '</button>' +
       '<button class="btn btn-icon btn-sm" type="button" aria-label="Actions">' + icon('more', 'icon-sm') + '</button></div></td></tr>';
   }).join('');
 
@@ -172,7 +172,7 @@ function pageOrders() {
       '<span class="grow name">' + esc(o.client) + '</span><span class="nowrap">' + money(o.total) + '</span>' + badge(o.status, o.tone) + '</div>';
   }).join('');
 
-  return '<div style="margin-bottom:18px">' + demoFlag() + '</div>' +
+  return '<div class="mb-18">' + demoFlag() + '</div>' +
     '<div class="filterbar">' +
       '<div><label>Statut</label>' + select('f-status', ['Tous les statuts', 'Nouvelle', 'Payée', 'En préparation', 'Expédiée', 'Livrée', 'Annulée', 'Remboursée']) + '</div>' +
       '<div><label>Paiement</label>' + select('f-pay', ['Tous les paiements', 'Carte bancaire', 'PayPal', 'Apple Pay']) + '</div>' +
@@ -181,7 +181,7 @@ function pageOrders() {
       '<button class="btn" type="button">' + icon('download', 'icon-sm') + 'Exporter</button>' +
     '</div>' +
 
-    '<div class="grid-main" style="grid-template-columns:1fr 420px;align-items:start">' +
+    '<div class="grid-main g-side">' +
       '<div class="stack">' +
         '<section class="card"><div class="table-wrap"><table class="table"><thead><tr>' +
           '<th>Commande</th><th>Client</th><th>Date</th><th>Total</th><th>Paiement</th><th>Livraison</th><th>Statut</th><th>Actions</th>' +
@@ -252,14 +252,14 @@ function pageProducts() {
   const rows = list.map(function (p, i) {
     const stock = [42, 67, 120, 28, 54, 73, 98, 31, 12, 45, 60][i] || 40;
     return '<tr data-product="' + i + '"' + (i === 0 ? ' class="is-selected"' : '') + '>' +
-      '<td><input type="checkbox" aria-label="Sélectionner"></td>' +
-      '<td><div class="cell-main"><img class="thumb" src="' + esc(mediaSrc(p.images[0])) + '" alt="">' +
+      '<td class="c-check"><input type="checkbox" aria-label="Sélectionner"></td>' +
+      '<td class="c-main"><div class="cell-main"><img class="thumb" src="' + esc(mediaSrc(p.images[0])) + '" alt="">' +
         '<div><div class="t-title">' + esc(p.name) + '</div><div class="t-sub">SKU : NOV-' + esc(p.id.slice(0, 3).toUpperCase()) + '-' + String(100 + i) + '</div></div></div></td>' +
-      '<td class="muted">' + esc(p.gender === 'unisexe' ? 'Unisexe' : p.gender.charAt(0).toUpperCase() + p.gender.slice(1)) + '</td>' +
-      '<td class="nowrap">' + money(p.price) + '</td><td>' + stock + '</td>' +
-      '<td>' + badge('Publié', 'success') + '</td>' +
-      '<td>' + (p.newProduct ? badge('Nouveau', 'neutral', true) : (p.featured ? badge('Best-seller', 'warning', true) : '')) + '</td>' +
-      '<td><div style="display:flex;gap:4px"><button class="btn btn-icon btn-sm" type="button" aria-label="Éditer">' + icon('edit', 'icon-sm') + '</button>' +
+      '<td data-l="Catégorie" class="muted">' + esc(p.gender === 'unisexe' ? 'Unisexe' : p.gender.charAt(0).toUpperCase() + p.gender.slice(1)) + '</td>' +
+      '<td data-l="Prix" class="nowrap">' + money(p.price) + '</td><td data-l="Stock">' + stock + '</td>' +
+      '<td data-l="Statut">' + badge('Publié', 'success') + '</td>' +
+      '<td data-l="Tags">' + (p.newProduct ? badge('Nouveau', 'neutral', true) : (p.featured ? badge('Best-seller', 'warning', true) : '')) + '</td>' +
+      '<td data-l="Actions"><div style="display:flex;gap:4px"><button class="btn btn-icon btn-sm" type="button" aria-label="Éditer">' + icon('edit', 'icon-sm') + '</button>' +
       '<button class="btn btn-icon btn-sm" type="button" aria-label="Actions">' + icon('more', 'icon-sm') + '</button></div></td></tr>';
   }).join('');
 
@@ -273,7 +273,7 @@ function pageProducts() {
       '<button class="btn btn-primary" type="button">' + icon('plus', 'icon-sm') + 'Ajouter un produit</button>' +
     '</div>' +
 
-    '<div class="grid-main" style="grid-template-columns:1fr 480px;align-items:start">' +
+    '<div class="grid-main g-side">' +
       '<section class="card">' +
         '<div class="card-head"><h3>' + list.length + ' produits trouvés</h3></div>' +
         '<div class="table-wrap"><table class="table"><thead><tr>' +
@@ -300,12 +300,12 @@ function productPanel(i) {
         field('Catégorie *', select('pd-cat', CATEGORIES.filter(function (c) { return c.key !== 'all'; }).map(function (c) { return c.label; }), p.categoryLabel)) +
         field('Collection', select('pd-col', ['Homme', 'Femme', 'Accessoires', 'Performance'], p.gender === 'femme' ? 'Femme' : 'Homme')) +
       '</div>' +
-      '<div class="field-row" style="grid-template-columns:1fr 1fr 1fr">' +
+      '<div class="field-row g-3">' +
         field('Prix *', input('pd-price', p.price + ',00 €')) +
         field('Prix réduit', input('pd-sale', '', { placeholder: 'Ex : 199,00 €' })) +
         field('Coût d\'achat', input('pd-cost', Math.round(p.price * 0.48) + ',00 €')) +
       '</div>' +
-      '<div class="field-row" style="grid-template-columns:1.2fr .9fr .9fr;align-items:end">' +
+      '<div class="field-row g-prod3">' +
         field('Statut', select('pd-status', ['Publié', 'Brouillon'], 'Publié')) +
         '<div class="field"><label>Produit en vedette</label>' + toggle('pd-featured', p.featured, 'Produit en vedette') + '</div>' +
         '<div class="field"><label>Nouveau</label>' + toggle('pd-new', p.newProduct, 'Nouveauté') + '</div>' +
@@ -313,10 +313,10 @@ function productPanel(i) {
       field('Description courte', '<textarea class="textarea" id="pd-desc">' + esc(p.description) + '</textarea>') +
 
       '<div class="form-section-title">Médias</div>' +
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+      '<div class="g-2 gap-10" style="display:grid">' +
         '<div class="dropzone" style="flex-direction:column;text-align:center">' + icon('upload') +
           '<div><strong>Glissez-déposez vos images</strong><small>JPG, PNG, WebP — max 10 Mo</small></div></div>' +
-        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">' +
+        '<div class="g-3 gap-8" style="display:grid">' +
           p.images.slice(0, 5).map(function (src) {
             return '<img src="' + esc(mediaSrc(src)) + '" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px">';
           }).join('') +
@@ -354,17 +354,17 @@ function pageCollections() {
   ];
   const rows = cols.map(function (c, i) {
     return '<tr data-collection="' + i + '"' + (i === 0 ? ' class="is-selected"' : '') + '>' +
-      '<td><span class="grip">' + icon('grip', 'icon-sm') + '</span></td>' +
-      '<td><div class="cell-main"><img class="thumb" src="' + esc(mediaSrc(c.img)) + '" alt="">' +
+      '<td class="c-check"><span class="grip">' + icon('grip', 'icon-sm') + '</span></td>' +
+      '<td class="c-main"><div class="cell-main"><img class="thumb" src="' + esc(mediaSrc(c.img)) + '" alt="">' +
         '<div><div class="t-title">' + esc(c.name) + '</div><div class="t-sub">' + esc(c.desc) + '</div></div></div></td>' +
-      '<td class="right">' + c.count + '</td><td class="right dim">' + c.order + '</td>' +
-      '<td>' + badge(c.status, c.tone) + '</td>' +
-      '<td>' + toggle('col-' + i, c.status === 'Publiée', 'Visibilité ' + c.name) + '</td>' +
-      '<td><button class="btn btn-icon btn-sm" type="button" aria-label="Éditer">' + icon('edit', 'icon-sm') + '</button></td></tr>';
+      '<td data-l="Produits" class="right">' + c.count + '</td><td data-l="Ordre" class="right dim">' + c.order + '</td>' +
+      '<td data-l="Statut">' + badge(c.status, c.tone) + '</td>' +
+      '<td data-l="Visible">' + toggle('col-' + i, c.status === 'Publiée', 'Visibilité ' + c.name) + '</td>' +
+      '<td data-l="Actions"><button class="btn btn-icon btn-sm" type="button" aria-label="Éditer">' + icon('edit', 'icon-sm') + '</button></td></tr>';
   }).join('');
 
-  return '<div style="margin-bottom:18px">' + demoFlag('Collections dérivées du catalogue réel — la table dédiée sera créée avec le module Commerce.') + '</div>' +
-    '<div class="grid-main" style="grid-template-columns:1fr 440px;align-items:start">' +
+  return '<div class="mb-18">' + demoFlag('Collections dérivées du catalogue réel — la table dédiée sera créée avec le module Commerce.') + '</div>' +
+    '<div class="grid-main g-side">' +
       '<section class="card">' +
         cardHead('Toutes les collections', '<button class="btn btn-primary btn-sm" type="button">' + icon('plus', 'icon-sm') + 'Nouvelle collection</button>') +
         '<div class="table-wrap"><table class="table"><thead><tr><th style="width:36px"></th><th>Collection</th>' +
@@ -374,7 +374,7 @@ function pageCollections() {
       '<aside class="panel">' +
         '<div class="panel-head"><h2>Éditer la collection</h2></div>' +
         '<div class="panel-body">' +
-          '<div class="seg" style="margin-bottom:18px"><button type="button" class="is-active">Informations</button>' +
+          '<div class="seg" class="mb-18"><button type="button" class="is-active">Informations</button>' +
             '<button type="button">Produits</button><button type="button">Ordre et affichage</button></div>' +
           field('Nom de la collection', input('c-name', 'Homme')) +
           field('Slug', input('c-slug', 'homme')) +
@@ -405,12 +405,12 @@ function pageStocks() {
     const st = v.stock === 0 ? ['Rupture', 'danger'] : (v.stock <= v.seuil ? ['Stock faible', 'warning'] : ['En stock', 'success']);
     return '<tr><td><div class="cell-main"><img class="thumb" src="' + esc(mediaSrc(v.p.images[0])) + '" alt="">' +
       '<div><div class="t-title">' + esc(v.p.name) + '</div><div class="t-sub">' + esc(v.p.categoryLabel) + '</div></div></div></td>' +
-      '<td>' + esc(v.size) + '</td>' +
-      '<td><span style="display:inline-flex;align-items:center;gap:7px"><i style="width:11px;height:11px;border-radius:50%;background:' + colorSwatch(v.color) + ';display:inline-block"></i>' + esc(v.color) + '</span></td>' +
-      '<td class="dim nowrap">NOV-' + esc(v.p.id.slice(0, 3).toUpperCase()) + '-' + esc(v.size) + '</td>' +
-      '<td><strong class="' + (v.stock === 0 ? 'neg' : (v.stock <= v.seuil ? '' : 'pos')) + '">' + v.stock + '</strong></td>' +
-      '<td class="dim">' + v.seuil + '</td><td>' + badge(st[0], st[1]) + '</td>' +
-      '<td><div style="display:flex;align-items:center;gap:4px">' +
+      '<td data-l="Taille">' + esc(v.size) + '</td>' +
+      '<td data-l="Couleur"><span style="display:inline-flex;align-items:center;gap:7px"><i style="width:11px;height:11px;border-radius:50%;background:' + colorSwatch(v.color) + ';display:inline-block"></i>' + esc(v.color) + '</span></td>' +
+      '<td data-l="SKU" class="dim nowrap">NOV-' + esc(v.p.id.slice(0, 3).toUpperCase()) + '-' + esc(v.size) + '</td>' +
+      '<td data-l="Stock actuel"><strong class="' + (v.stock === 0 ? 'neg' : (v.stock <= v.seuil ? '' : 'pos')) + '">' + v.stock + '</strong></td>' +
+      '<td data-l="Seuil" class="dim">' + v.seuil + '</td><td data-l="Statut">' + badge(st[0], st[1]) + '</td>' +
+      '<td data-l="Ajuster"><div style="display:flex;align-items:center;gap:4px">' +
         '<button class="btn btn-icon btn-sm" type="button" aria-label="Retirer">−</button>' +
         '<input class="input" style="width:56px;height:32px;text-align:center" value="' + v.stock + '" aria-label="Stock">' +
         '<button class="btn btn-icon btn-sm" type="button" aria-label="Ajouter">+</button></div></td></tr>';
@@ -423,15 +423,15 @@ function pageStocks() {
       '<div class="t-sub">' + esc(m.when) + '</div><div class="t-sub">' + esc(m.by) + '</div></span></div>';
   }).join('');
 
-  return '<div style="margin-bottom:18px">' + demoFlag('Variantes issues du catalogue réel, quantités de démonstration.') + '</div>' +
-    '<div class="kpi-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">' +
+  return '<div class="mb-18">' + demoFlag('Variantes issues du catalogue réel, quantités de démonstration.') + '</div>' +
+    '<div class="kpi-row k-4 mb-18">' +
       kpiCard({ label: 'Ruptures de stock', value: '<span class="neg">8</span>', icon: 'xcircle', tone: 'r', sub: 'Produits à 0 en stock' }) +
       kpiCard({ label: 'Stocks faibles', value: '<span style="color:var(--amber-text)">23</span>', icon: 'alert', tone: 'a', sub: 'Produits sous le seuil' }) +
       kpiCard({ label: 'À réassortir', value: '<span class="pos">15</span>', icon: 'cart', tone: 'g', sub: 'Produits à réapprovisionner' }) +
       kpiCard({ label: 'Mouvements (7 jours)', value: '<span style="color:var(--blue-text)">128</span>', icon: 'trend', tone: 'b', sub: 'Entrées et sorties de stock' }) +
     '</div>' +
 
-    '<div class="grid-main" style="grid-template-columns:1fr 400px;align-items:start">' +
+    '<div class="grid-main g-side">' +
       '<section class="card">' +
         '<div class="card-head"><h3>Stocks par produit / variante</h3><div style="display:flex;gap:10px">' +
           '<button class="btn btn-sm" type="button">' + icon('filter', 'icon-sm') + 'Filtres</button>' +
@@ -454,16 +454,16 @@ function pagePromotions() {
     return '<tr' + (i === 0 ? ' class="is-selected"' : '') + '>' +
       '<td><input type="checkbox" aria-label="Sélectionner"></td>' +
       '<td><div class="t-title">' + esc(p.code) + '</div><div class="t-sub">' + esc(p.desc) + '</div></td>' +
-      '<td>' + badge(p.type, 'success', true) + '</td><td>' + esc(p.red) + '</td>' +
-      '<td class="nowrap"><div>' + esc(p.from) + '</div><div class="t-sub">→ ' + esc(p.to) + '</div></td>' +
-      '<td class="nowrap"><div>' + esc(p.limit) + '</div><div class="t-sub">' + esc(p.left) + '</div></td>' +
-      '<td class="nowrap"><div>' + p.used + '</div><div class="t-sub">utilisations</div></td>' +
-      '<td>' + badge(p.status, p.tone) + '</td>' +
-      '<td><button class="btn btn-icon btn-sm" type="button" aria-label="Actions">' + icon('more', 'icon-sm') + '</button></td></tr>';
+      '<td data-l="Type">' + badge(p.type, 'success', true) + '</td><td data-l="Réduction">' + esc(p.red) + '</td>' +
+      '<td data-l="Période" class="nowrap"><div>' + esc(p.from) + '</div><div class="t-sub">→ ' + esc(p.to) + '</div></td>' +
+      '<td data-l="Limite" class="nowrap"><div>' + esc(p.limit) + '</div><div class="t-sub">' + esc(p.left) + '</div></td>' +
+      '<td data-l="Usage" class="nowrap"><div>' + p.used + '</div><div class="t-sub">utilisations</div></td>' +
+      '<td data-l="Statut">' + badge(p.status, p.tone) + '</td>' +
+      '<td data-l="Actions"><button class="btn btn-icon btn-sm" type="button" aria-label="Actions">' + icon('more', 'icon-sm') + '</button></td></tr>';
   }).join('');
 
-  return '<div style="margin-bottom:18px">' + demoFlag() + '</div>' +
-    '<div class="grid-main" style="grid-template-columns:1fr 500px;align-items:start">' +
+  return '<div class="mb-18">' + demoFlag() + '</div>' +
+    '<div class="grid-main g-side">' +
       '<section class="card">' +
         '<div class="card-head"><h3>Toutes les promotions <span class="badge-count">' + DEMO.promos.length + '</span></h3>' +
           '<div class="search">' + icon('search', 'icon-sm') + '<input class="input" style="height:34px" type="search" placeholder="Rechercher une promotion"></div></div>' +
@@ -509,25 +509,25 @@ function pagePromotions() {
 function pageCrm() {
   const rows = DEMO.customers.map(function (c, i) {
     return '<tr data-customer="' + i + '"' + (i === 0 ? ' class="is-selected"' : '') + '>' +
-      '<td><div class="cell-main"><span class="avatar">' + initials(c.name) + '</span><span class="t-title">' + esc(c.name) + '</span></div></td>' +
-      '<td class="muted">' + esc(c.mail) + '</td><td class="muted nowrap">' + esc(c.tel) + '</td>' +
-      '<td class="nowrap">' + money(c.spent) + '</td><td class="right">' + c.orders + '</td>' +
-      '<td class="nowrap">' + money(c.avg) + '</td><td class="nowrap muted">' + esc(c.last) + '</td>' +
-      '<td>' + badge(c.seg, c.tone) + '</td></tr>';
+      '<td class="c-main"><div class="cell-main"><span class="avatar">' + initials(c.name) + '</span><span class="t-title">' + esc(c.name) + '</span></div></td>' +
+      '<td data-l="Email" class="muted">' + esc(c.mail) + '</td><td data-l="Téléphone" class="muted nowrap">' + esc(c.tel) + '</td>' +
+      '<td data-l="Total dépensé" class="nowrap">' + money(c.spent) + '</td><td data-l="Commandes" class="right">' + c.orders + '</td>' +
+      '<td data-l="Panier moyen" class="nowrap">' + money(c.avg) + '</td><td data-l="Dernière commande" class="nowrap muted">' + esc(c.last) + '</td>' +
+      '<td data-l="Segment">' + badge(c.seg, c.tone) + '</td></tr>';
   }).join('');
   const c = DEMO.customers[0];
 
-  return '<div style="margin-bottom:18px">' + demoFlag() + '</div>' +
-    '<div class="kpi-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:18px">' +
+  return '<div class="mb-18">' + demoFlag() + '</div>' +
+    '<div class="kpi-row k-3 mb-18">' +
       kpiCard({ label: 'Nouveaux clients', value: '128', delta: 18.5, icon: 'user', tone: 'g', sub: 'vs période précédente' }) +
       kpiCard({ label: 'Clients actifs', value: '2 847', delta: 12.3, icon: 'users', tone: 'g', sub: 'vs période précédente' }) +
       kpiCard({ label: 'Clients fidèles', value: '642', delta: 9.1, icon: 'star', tone: 'g', sub: 'vs période précédente' }) +
     '</div>' +
 
-    '<div class="grid-main" style="grid-template-columns:1fr 460px;align-items:start">' +
+    '<div class="grid-main g-side">' +
       '<section class="card">' +
         '<div class="card-head"><div class="search">' + icon('search', 'icon-sm') +
-          '<input class="input" style="height:34px;min-width:280px" type="search" placeholder="Rechercher un client (nom, email, téléphone…)"></div>' +
+          '<input class="input" style="height:34px" type="search" placeholder="Rechercher un client (nom, email, téléphone…)"></div>' +
           '<div style="display:flex;gap:10px"><button class="btn btn-sm" type="button">' + icon('filter', 'icon-sm') + 'Filtres</button>' +
           '<button class="btn btn-sm" type="button">' + icon('download', 'icon-sm') + 'Exporter</button></div></div>' +
         '<div class="table-wrap"><table class="table"><thead><tr><th>Nom</th><th>Email</th><th>Téléphone</th>' +
@@ -554,7 +554,7 @@ function pageCrm() {
           '<p class="muted" style="margin:0 0 16px;font-size:12px">Client très fidèle. Apprécie les collections premium et les éditions limitées. Privilégier les avant-premières et offres exclusives.</p>' +
 
           '<div class="card-head" style="padding:0 0 10px;border:0"><h3>Produits achetés</h3><a class="card-link" href="#produits">Voir tout</a></div>' +
-          '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px">' +
+          '<div class="g-4 gap-8 mb-18" style="display:grid">' +
             catalogue().slice(0, 4).map(function (p) {
               return '<div><img src="' + esc(mediaSrc(p.images[0])) + '" alt="" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:8px">' +
                 '<div class="sub" style="margin-top:5px">' + esc(p.name) + '</div><div class="sub dim">' + money(p.price) + '</div></div>';
@@ -568,7 +568,7 @@ function pageCrm() {
           }).join('') +
 
           '<div class="form-section-title">Segment client</div>' +
-          '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">' +
+          '<div class="g-3 gap-8" style="display:grid">' +
             '<button class="btn" type="button" style="border-color:var(--blue);color:var(--blue-text)">Nouveau</button>' +
             '<button class="btn" type="button" style="border-color:var(--green);color:var(--green-text)">Actif</button>' +
             '<button class="btn" type="button" style="border-color:var(--amber);color:var(--amber-text)">VIP</button></div>' +
@@ -623,15 +623,15 @@ function pageAnalytics() {
       '<div class="table-wrap"><table class="table"><thead><tr>' + head + '</tr></thead><tbody>' + rows + '</tbody></table></div></section>';
   };
 
-  return '<div style="margin-bottom:18px">' + demoFlag('Données analytiques de démonstration — aucune sonde de mesure n\'est encore installée sur le site public.') + '</div>' +
+  return '<div class="mb-18">' + demoFlag('Données analytiques de démonstration — aucune sonde de mesure n\'est encore installée sur le site public.') + '</div>' +
     '<div class="filterbar"><button class="btn" type="button">' + icon('calendar', 'icon-sm') + '18 mai 2025 – 24 mai 2025</button>' +
       select('a-cmp', ['vs période précédente', 'vs année précédente']) +
       '<span class="grow"></span><span class="dim">' + icon('refresh', 'icon-sm') + ' Actualisation : il y a 5 min</span>' +
       '<button class="btn" type="button">' + icon('download', 'icon-sm') + 'Exporter</button></div>' +
 
-    '<div class="kpi-row" style="margin-bottom:18px">' + kpis + '</div>' +
+    '<div class="kpi-row" class="mb-18">' + kpis + '</div>' +
 
-    '<div class="grid-main g-1-1-1" style="grid-template-columns:1.7fr 1.15fr 1.15fr;margin-bottom:18px">' +
+    '<div class="grid-main g-ana-top mb-18">' +
       '<section class="card">' + cardHead("Évolution du chiffre d'affaires", '<span class="chip">Par jour ' + icon('chevronD', 'icon-sm') + '</span>') +
         '<div class="chart-box">' + lineChart(DEMO.revenue, DEMO.days, { color: 'var(--green)' }) + '</div></section>' +
       '<section class="card">' + cardHead('Entonnoir de conversion') + '<div class="card-pad">' + funnel +
@@ -757,8 +757,8 @@ function pageReviews() {
       '<button class="btn btn-icon btn-sm" type="button" aria-label="Masquer">' + icon('eye', 'icon-sm') + '</button></div></td></tr>';
   }).join('');
 
-  return '<div style="margin-bottom:18px">' + demoFlag() + '</div>' +
-    '<div class="kpi-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">' +
+  return '<div class="mb-18">' + demoFlag() + '</div>' +
+    '<div class="kpi-row k-4 mb-18">' +
       kpiCard({ label: 'Note moyenne', value: '4,7 / 5', icon: 'star', tone: 'a', sub: 'sur 248 avis' }) +
       kpiCard({ label: 'Avis publiés', value: '236', icon: 'check', tone: 'g', sub: '95 % du total' }) +
       kpiCard({ label: 'En attente', value: '12', icon: 'alert', tone: 'a', sub: 'à modérer' }) +
@@ -787,14 +787,14 @@ function pageSav() {
       '<td class="muted">' + esc(r[4]) + '</td><td class="dim nowrap">' + esc(r[5]) + '</td><td>' + badge(r[6], r[7]) + '</td></tr>';
   }).join('');
 
-  return '<div style="margin-bottom:18px">' + demoFlag() + '</div>' +
-    '<div class="kpi-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">' +
+  return '<div class="mb-18">' + demoFlag() + '</div>' +
+    '<div class="kpi-row k-4 mb-18">' +
       kpiCard({ label: 'Demandes ouvertes', value: '6', icon: 'returns', tone: 'a', sub: 'à traiter' }) +
       kpiCard({ label: 'En cours de traitement', value: '3', icon: 'refresh', tone: 'b', sub: 'produits en transit' }) +
       kpiCard({ label: 'Remboursements du mois', value: '1 240,00 €', icon: 'euro', tone: 'r', sub: '12 dossiers' }) +
       kpiCard({ label: 'Délai moyen', value: '3,2 j', icon: 'trend', tone: 'g', sub: 'de la demande au remboursement' }) +
     '</div>' +
-    '<div class="grid-main" style="grid-template-columns:1fr 400px;align-items:start">' +
+    '<div class="grid-main g-side">' +
       '<section class="card">' + cardHead('Demandes de retour') +
         '<div class="table-wrap"><table class="table"><thead><tr><th>Retour</th><th>Commande</th><th>Client</th>' +
         '<th>Produit</th><th>Motif</th><th>Date</th><th>Statut</th></tr></thead><tbody>' + rows + '</tbody></table></div></section>' +
@@ -824,14 +824,14 @@ function pageNewsletter() {
       '<td class="dim nowrap">' + esc(r[2]) + '</td><td>' + badge(r[3], r[3] === 'Actif' ? 'success' : 'neutral') + '</td></tr>';
   }).join('');
 
-  return '<div style="margin-bottom:18px">' + demoFlag('Abonnés de démonstration — le formulaire du site n\'est pas encore relié à un service d\'envoi.') + '</div>' +
-    '<div class="kpi-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">' +
+  return '<div class="mb-18">' + demoFlag('Abonnés de démonstration — le formulaire du site n\'est pas encore relié à un service d\'envoi.') + '</div>' +
+    '<div class="kpi-row k-4 mb-18">' +
       kpiCard({ label: 'Abonnés', value: '3 482', delta: 8.4, icon: 'users', tone: 'g', sub: 'dont 2 140 clients' }) +
       kpiCard({ label: "Taux d'ouverture", value: '38,2 %', delta: 2.1, icon: 'newsletter', tone: 'b', sub: 'dernière campagne' }) +
       kpiCard({ label: 'Taux de clic', value: '6,4 %', delta: 0.8, icon: 'target', tone: 'v', sub: 'dernière campagne' }) +
       kpiCard({ label: 'Désabonnements', value: '0,3 %', delta: -0.1, icon: 'returns', tone: 'a', sub: '30 derniers jours' }) +
     '</div>' +
-    '<div class="grid-main" style="grid-template-columns:1fr 380px;align-items:start">' +
+    '<div class="grid-main g-side">' +
       '<section class="card">' +
         '<div class="card-head"><h3>Abonnés</h3><div style="display:flex;gap:10px">' +
           select('nl-seg', ['Tous', 'Clients', 'Prospects']) +
@@ -863,7 +863,7 @@ async function pageAdmins() {
       '<td class="dim nowrap">' + dateFR(a.created_at) + '</td></tr>';
   }).join('');
 
-  return '<div class="grid-main" style="grid-template-columns:1fr 360px;align-items:start">' +
+  return '<div class="grid-main g-side">' +
     '<section class="card">' + cardHead('Utilisateurs de l\'administration') +
       '<div class="table-wrap"><table class="table"><thead><tr><th>Utilisateur</th><th>Rôle</th><th>Statut</th>' +
       '<th>Dernière connexion</th><th>Créé le</th></tr></thead><tbody>' + rows + '</tbody></table></div></section>' +

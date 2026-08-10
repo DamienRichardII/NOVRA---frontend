@@ -226,7 +226,7 @@ async function route() {
   document.querySelectorAll('.sb-item').forEach(function (a) {
     a.classList.toggle('is-active', a.dataset.view === view);
   });
-  document.getElementById('sidebar').classList.remove('is-open');
+  openMenu(false);
   renderHeaderActions();
 
   const host = document.getElementById('admin-content');
@@ -246,6 +246,8 @@ async function route() {
   host.innerHTML = html;
   window.scrollTo(0, 0);
 
+  wirePanel();
+
   if (view === 'contenus') afterContents();
   if (view === 'mediatheque') afterLibrary();
   if (view === 'dashboard') loadDashboardActivity();
@@ -253,10 +255,75 @@ async function route() {
 }
 
 window.addEventListener('hashchange', route);
+
+/* ------------------- Tiroirs mobile : menu et panneaux ------------------ */
+function isMobile() { return window.matchMedia('(max-width: 767px)').matches; }
+
+function lockScroll(on) { document.body.style.overflow = on ? 'hidden' : ''; }
+
+function openMenu(open) {
+  const sbEl = document.getElementById('sidebar');
+  const ov = document.getElementById('sb-overlay');
+  sbEl.classList.toggle('is-open', open);
+  ov.hidden = !open;
+  ov.classList.toggle('is-open', open);
+  document.getElementById('menu-toggle').setAttribute('aria-expanded', String(open));
+  lockScroll(open);
+}
+
 document.getElementById('menu-toggle').addEventListener('click', function () {
-  const sb = document.getElementById('sidebar');
-  const open = sb.classList.toggle('is-open');
-  this.setAttribute('aria-expanded', String(open));
+  openMenu(!document.getElementById('sidebar').classList.contains('is-open'));
+});
+document.getElementById('sb-close').addEventListener('click', function () { openMenu(false); });
+document.getElementById('sb-overlay').addEventListener('click', function () { openMenu(false); });
+
+/* Le panneau latéral devient un écran plein sur téléphone */
+function openPanel(open) {
+  const p = document.querySelector('#admin-content .panel');
+  if (!p || !isMobile()) return;
+  p.classList.toggle('is-open', open);
+  lockScroll(open);
+}
+
+/* Bouton de fermeture ajouté au panneau, et ouverture depuis une ligne */
+function wirePanel() {
+  const p = document.querySelector('#admin-content .panel');
+  if (!p) return;
+  const head = p.querySelector('.panel-head');
+  if (head && !head.querySelector('.panel-close')) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn btn-icon btn-sm panel-close';
+    b.setAttribute('aria-label', 'Fermer');
+    b.innerHTML = icon('close', 'icon-sm');
+    b.addEventListener('click', function () { openPanel(false); });
+    head.appendChild(b);
+  }
+  document.querySelectorAll('#admin-content .table tbody tr').forEach(function (tr) {
+    tr.addEventListener('click', function (e) {
+      if (e.target.closest('input, .toggle')) return;
+      document.querySelectorAll('#admin-content .table tbody tr').forEach(function (x) { x.classList.remove('is-selected'); });
+      tr.classList.add('is-selected');
+      openPanel(true);
+    });
+  });
+}
+
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Escape') return;
+  if (document.getElementById('sidebar').classList.contains('is-open')) { openMenu(false); return; }
+  const p = document.querySelector('#admin-content .panel.is-open');
+  if (p) openPanel(false);
+});
+
+/* Retour au bon état si l'on passe du téléphone au grand écran */
+window.matchMedia('(max-width: 767px)').addEventListener('change', function (e) {
+  if (!e.matches) {
+    openMenu(false);
+    const p = document.querySelector('#admin-content .panel');
+    if (p) p.classList.remove('is-open');
+    lockScroll(false);
+  }
 });
 
 /* Activité récente du tableau de bord (données réelles) */
@@ -652,7 +719,7 @@ async function pageLibrary() {
     '</section>' +
 
     '<section class="stack">' +
-      '<div style="display:grid;grid-template-columns:1.1fr 1fr;gap:14px">' +
+      '<div class="grid-main g-2" style="gap:14px">' +
         '<label class="dropzone" id="dropzone">' + icon('upload', 'icon-lg') +
           '<div><strong>Glissez-déposez vos fichiers ici</strong><small>ou cliquez pour parcourir — JPG, PNG, WEBP, MP4 · max 200 Mo</small></div>' +
           '<input type="file" id="lib-upload" accept="image/*,video/mp4,video/webm" multiple hidden></label>' +
