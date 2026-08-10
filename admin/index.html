@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,156 +9,80 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin-design-system.css">
 <link rel="stylesheet" href="admin.css">
+<script>
+  /* Thème appliqué avant le rendu pour éviter tout flash */
+  (function () {
+    var saved = localStorage.getItem('novra-admin-theme');
+    var sys = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    document.documentElement.dataset.theme = saved || sys;
+  })();
+</script>
 </head>
 <body>
 
-<!-- ============================ CONNEXION ============================ -->
+<!-- ============================= CONNEXION ============================= -->
 <div class="login" id="login-view">
   <form class="login-box" id="login-form" novalidate>
-    <img src="../assets/web/logo/novra-wordmark-hero.png" alt="NOVRA" width="180">
-    <p class="login-sub">Back-office</p>
+    <div class="brand">
+      <img src="../assets/web/logo/novra-wordmark-hero.png" alt="NOVRA">
+      <span>ADMIN</span>
+    </div>
 
-    <label for="login-email">Adresse e-mail</label>
-    <input type="email" id="login-email" autocomplete="email" required>
-
-    <label for="login-password">Mot de passe</label>
-    <input type="password" id="login-password" autocomplete="current-password" required>
+    <div class="field">
+      <label for="login-email">Adresse e-mail</label>
+      <input class="input" type="email" id="login-email" autocomplete="email" required>
+    </div>
+    <div class="field">
+      <label for="login-password">Mot de passe</label>
+      <input class="input" type="password" id="login-password" autocomplete="current-password" required>
+    </div>
 
     <button class="btn btn-primary btn-block" type="submit" id="login-submit">Se connecter</button>
-    <button class="link-btn" type="button" id="forgot-password">Mot de passe oublié</button>
+    <div class="login-links"><button class="link-btn" type="button" id="forgot-password">Mot de passe oublié</button></div>
     <p class="login-msg" id="login-msg" role="status" aria-live="polite"></p>
   </form>
 </div>
 
-<!-- ============================= APP ================================ -->
-<div class="app" id="app-view" hidden>
+<!-- ================================ APP =============================== -->
+<div class="admin-app" id="app-view" hidden>
 
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-head">
-      <img src="../assets/web/logo/novra-wordmark-sm.png" alt="NOVRA" width="96">
+  <aside class="admin-sidebar" id="sidebar">
+    <div class="sb-brand">
+      <img src="../assets/web/logo/novra-wordmark-hero.png" alt="NOVRA">
       <span>ADMIN</span>
     </div>
-
-    <nav class="nav">
-      <p class="nav-group">Dashboard</p>
-      <a class="nav-item" href="#dashboard" data-view="dashboard">Vue d'ensemble</a>
-
-      <p class="nav-group">Contenu</p>
-      <a class="nav-item is-active" href="#contenus" data-view="contenus">Médias &amp; Contenus</a>
-      <a class="nav-item" href="#mediatheque" data-view="mediatheque">Médiathèque</a>
-
-      <p class="nav-group">Commerce</p>
-      <a class="nav-item" href="#produits" data-view="produits">Produits</a>
-      <a class="nav-item" href="#commandes" data-view="commandes">Commandes</a>
-      <a class="nav-item" href="#stocks" data-view="stocks">Stocks</a>
-      <a class="nav-item" href="#promotions" data-view="promotions">Promotions</a>
-
-      <p class="nav-group">Clients</p>
-      <a class="nav-item" href="#clients" data-view="clients">CRM Clients</a>
-      <a class="nav-item" href="#avis" data-view="avis">Avis</a>
-      <a class="nav-item" href="#sav" data-view="sav">Retours / SAV</a>
-
-      <p class="nav-group">Marketing</p>
-      <a class="nav-item" href="#newsletter" data-view="newsletter">Newsletter</a>
-      <a class="nav-item" href="#analytics" data-view="analytics">Analytics</a>
-
-      <p class="nav-group">Système</p>
-      <a class="nav-item" href="#journal" data-view="journal">Journal d'activité</a>
-      <a class="nav-item" href="#administrateurs" data-view="administrateurs">Administrateurs</a>
-      <a class="nav-item" href="#parametres" data-view="parametres">Paramètres</a>
-    </nav>
-
-    <div class="sidebar-foot">
-      <div class="me">
-        <strong id="me-name">—</strong>
-        <span id="me-role">—</span>
+    <nav class="sb-nav" id="sb-nav" aria-label="Navigation principale"></nav>
+    <div class="sb-foot">
+      <div class="sb-user">
+        <span class="avatar" id="me-avatar">—</span>
+        <span class="grow">
+          <strong id="me-name">—</strong>
+          <small id="me-role">—</small>
+        </span>
+        <i class="sb-dot" title="Connecté"></i>
       </div>
-      <button class="link-btn" type="button" id="logout">Déconnexion</button>
+      <button class="btn btn-block" type="button" id="logout">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        Déconnexion
+      </button>
     </div>
   </aside>
 
-  <div class="main">
-    <header class="topbar">
-      <button class="burger" type="button" id="menu-toggle" aria-label="Menu">☰</button>
-      <h1 id="view-title">Médias &amp; Contenus</h1>
-      <a class="link-btn" href="../index.html" target="_blank" rel="noopener">Voir le site</a>
+  <div class="admin-main">
+    <header class="admin-header">
+      <button class="burger" type="button" id="menu-toggle" aria-label="Ouvrir le menu" aria-expanded="false">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="titles">
+        <h1 id="page-title">Dashboard</h1>
+        <p id="page-sub">Vue d'ensemble de votre activité e-commerce</p>
+      </div>
+      <div class="header-actions" id="header-actions"></div>
     </header>
 
-    <!-- ---------------------- MÉDIAS & CONTENUS ---------------------- -->
-    <section class="view is-active" id="view-contenus">
-      <div class="cms">
-
-        <div class="cms-tree" id="cms-tree"></div>
-
-        <div class="cms-preview">
-          <div class="preview-bar">
-            <div class="seg" role="group" aria-label="Format de prévisualisation">
-              <button type="button" class="is-active" data-vp="1440">Desktop</button>
-              <button type="button" data-vp="768">Tablette</button>
-              <button type="button" data-vp="390">Mobile</button>
-            </div>
-            <span class="draft-flag" id="draft-flag" hidden>Modifications non publiées</span>
-          </div>
-          <div class="preview-stage" id="preview-stage"></div>
-          <p class="hint">Cliquez sur l'image pour définir le point focal du format affiché.</p>
-        </div>
-
-        <div class="cms-editor" id="cms-editor">
-          <p class="empty">Sélectionnez une section à gauche.</p>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- ------------------------- MÉDIATHÈQUE ------------------------- -->
-    <section class="view" id="view-mediatheque">
-      <div class="pad">
-        <div class="row-between">
-          <div class="filters-inline">
-            <input type="search" id="media-search" placeholder="Rechercher un fichier…">
-            <select id="media-folder">
-              <option value="">Tous les dossiers</option>
-              <option value="campagnes">Campagnes</option>
-              <option value="boutique-physique">Boutique physique</option>
-              <option value="produits">Produits</option>
-              <option value="videos">Vidéos</option>
-              <option value="logos">Logos</option>
-              <option value="autres">Autres</option>
-            </select>
-          </div>
-          <label class="btn btn-primary">
-            Téléverser
-            <input type="file" id="media-upload" accept="image/*,video/mp4,video/webm" multiple hidden>
-          </label>
-        </div>
-        <div class="media-grid" id="media-grid"></div>
-      </div>
-    </section>
-
-    <!-- --------------------- JOURNAL D'ACTIVITÉ ---------------------- -->
-    <section class="view" id="view-journal">
-      <div class="pad"><table class="table" id="journal-table"><tbody></tbody></table></div>
-    </section>
-
-    <!-- ------------------------- DASHBOARD --------------------------- -->
-    <section class="view" id="view-dashboard">
-      <div class="pad" id="dashboard-body"></div>
-    </section>
-
-    <!-- ----------------------- MODULES À VENIR ----------------------- -->
-    <section class="view" id="view-produits"><div class="pad soon" data-module="Produits"></div></section>
-    <section class="view" id="view-commandes"><div class="pad soon" data-module="Commandes"></div></section>
-    <section class="view" id="view-stocks"><div class="pad soon" data-module="Stocks"></div></section>
-    <section class="view" id="view-promotions"><div class="pad soon" data-module="Promotions"></div></section>
-    <section class="view" id="view-clients"><div class="pad soon" data-module="CRM Clients"></div></section>
-    <section class="view" id="view-avis"><div class="pad soon" data-module="Avis"></div></section>
-    <section class="view" id="view-sav"><div class="pad soon" data-module="Retours / SAV"></div></section>
-    <section class="view" id="view-newsletter"><div class="pad soon" data-module="Newsletter"></div></section>
-    <section class="view" id="view-analytics"><div class="pad soon" data-module="Analytics"></div></section>
-    <section class="view" id="view-administrateurs"><div class="pad" id="admins-body"></div></section>
-    <section class="view" id="view-parametres"><div class="pad soon" data-module="Paramètres"></div></section>
-
+    <div class="admin-content" id="admin-content"></div>
   </div>
 </div>
 
@@ -166,6 +90,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="../js/supabase-config.js"></script>
+<script src="../js/products.js"></script>
+<script src="admin-ui.js"></script>
+<script src="admin-pages.js"></script>
 <script src="admin.js"></script>
 </body>
 </html>
