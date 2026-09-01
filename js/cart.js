@@ -4,9 +4,14 @@
    ========================================================================= */
 
 const CART_KEY = 'novra_cart_v1';
+const PROMO_KEY = 'novra_promo_v1';
 const SHIPPING_THRESHOLD = 80;   // livraison offerte au-delà
 const SHIPPING_COST = 4.9;
-const PROMO_CODES = { NOVRA10: 10, MOVEMENT15: 15 };
+
+/* Les codes promo vivent en base et sont vérifiés à nouveau au moment du
+   paiement. Ce cache ne sert qu'à afficher le montant dans le panier :
+   il ne décide de rien. */
+let promoCache = null;
 
 const Cart = {
 
@@ -57,7 +62,7 @@ const Cart = {
     this.write(this.read().filter(function (i) { return self.key(i) !== key; }));
   },
 
-  clear() { this.write([]); },
+  clear() { this.setPromo('', null); this.write([]); },
 
   count() {
     return this.read().reduce(function (n, i) { return n + i.qty; }, 0);
@@ -90,16 +95,42 @@ const Cart = {
     return SHIPPING_COST;
   },
 
-  discount(code) {
-    const pct = PROMO_CODES[(code || '').toUpperCase().trim()];
-    if (!pct) return 0;
-    return this.subtotal() * pct / 100;
+  /* Code promotionnel retenu entre le panier et le tunnel de commande. */
+  promoCode() {
+    try { return localStorage.getItem(PROMO_KEY) || ''; } catch (e) { return ''; }
   },
 
-  total(code) {
-    return Math.max(0, this.subtotal() - this.discount(code) + this.shipping());
+  setPromo(code, promo) {
+    promoCache = promo || null;
+    try {
+      if (code) localStorage.setItem(PROMO_KEY, code);
+      else localStorage.removeItem(PROMO_KEY);
+    } catch (e) { /* navigation privée */ }
+  },
+
+  discount() {
+    if (!promoCache) return 0;
+    const sub = this.subtotal();
+    if (sub < Number(promoCache.min_amount || 0)) return 0;
+    if (promoCache.kind === 'percent') return sub * Number(promoCache.value) / 100;
+    if (promoCache.kind === 'amount') return Math.min(sub, Number(promoCache.value));
+    return 0;   /* livraison offerte : traitée dans shipping() */
+  },
+
+  total() {
+    const ship = (promoCache && promoCache.kind === 'free_shipping') ? 0 : this.shipping();
+    return Math.max(0, this.subtotal() - this.discount() + ship);
   }
 };
+
+/* Vérification d'un code auprès de la base. Seuls les codes actifs et dans
+   leur période de validité sont lisibles par un visiteur (règle RLS). */
+function checkPromoCode(code) {
+  return novraRest('promotions?code=eq.' + encodeURIComponent(code) +
+    '&select=code,kind,value,min_amount')
+    .then(function (rows) { return (rows && rows[0]) || null; })
+    .catch(function () { return null; });
+}
 
 /* ---------------------------- Rendu du panier ---------------------------- */
 
@@ -216,15 +247,16 @@ function renderCartPage() {
   if (summary) summary.hidden = false;
 
   const sub = Cart.subtotal();
-  const ship = Cart.shipping();
-  const disc = Cart.discount(appliedPromo);
+  const freePort = promoCache && promoCache.kind === 'free_shipping';
+  const ship = freePort ? 0 : Cart.shipping();
+  const disc = Cart.discount();
 
   if (totals) {
     totals.innerHTML =
       '<div class="total-row"><span>Sous-total</span><span>' + formatPrice(sub) + '</span></div>' +
-      (disc > 0 ? '<div class="total-row"><span>Remise (' + appliedPromo.toUpperCase() + ')</span><span>− ' + formatPrice(disc) + '</span></div>' : '') +
+      (disc > 0 ? '<div class="total-row"><span>Remise (' + appliedPromo + ')</span><span>− ' + formatPrice(disc) + '</span></div>' : '') +
       '<div class="total-row"><span>Livraison estimée</span><span>' + (ship === 0 ? 'Offerte' : formatPrice(ship)) + '</span></div>' +
-      '<div class="total-row is-total"><span>Total</span><span>' + formatPrice(Cart.total(appliedPromo)) + '</span></div>';
+      '<div class="total-row is-total"><span>Total</span><span>' + formatPrice(Cart.total()) + '</span></div>';
   }
 
   /* Recommandations basées sur le premier article */
@@ -250,6 +282,16 @@ function initCartPage() {
   renderCartPage();
   bindCartLineEvents(linesRoot);
 
+  /* Un code saisi lors d'une visite précédente est revalidé, jamais cru. */
+  const stored = Cart.promoCode();
+  if (stored) {
+    checkPromoCode(stored).then(function (promo) {
+      if (!promo || Cart.subtotal() < Number(promo.min_amount || 0)) { Cart.setPromo('', null); appliedPromo = ''; }
+      else { Cart.setPromo(promo.code, promo); appliedPromo = promo.code; }
+      renderCartPage();
+    });
+  }
+
   const apply = document.getElementById('promo-apply');
   if (apply) {
     apply.addEventListener('click', function () {
@@ -257,16 +299,35 @@ function initCartPage() {
       const feedback = document.getElementById('promo-feedback');
       const code = (input.value || '').toUpperCase().trim();
       if (!code) return;
-      if (PROMO_CODES[code]) {
-        appliedPromo = code;
-        feedback.textContent = 'Code appliqué : −' + PROMO_CODES[code] + ' %.';
-        feedback.className = 'form-feedback is-ok';
-      } else {
-        appliedPromo = '';
-        feedback.textContent = 'Ce code promotionnel n\'est pas valide.';
-        feedback.className = 'form-feedback is-error';
-      }
-      renderCartPage();
+
+      apply.disabled = true;
+      feedback.textContent = 'Vérification…';
+      feedback.className = 'form-feedback';
+
+      checkPromoCode(code).then(function (promo) {
+        apply.disabled = false;
+        if (!promo) {
+          appliedPromo = '';
+          Cart.setPromo('', null);
+          feedback.textContent = 'Ce code promotionnel n\'est pas valide ou a expiré.';
+          feedback.className = 'form-feedback is-error';
+        } else if (Cart.subtotal() < Number(promo.min_amount || 0)) {
+          appliedPromo = '';
+          Cart.setPromo('', null);
+          feedback.textContent = 'Ce code s\'applique à partir de ' + formatPrice(promo.min_amount) + ' d\'achat.';
+          feedback.className = 'form-feedback is-error';
+        } else {
+          appliedPromo = promo.code;
+          Cart.setPromo(promo.code, promo);
+          feedback.textContent = promo.kind === 'percent'
+            ? 'Code appliqué : −' + Number(promo.value) + ' %.'
+            : promo.kind === 'amount'
+              ? 'Code appliqué : −' + formatPrice(promo.value) + '.'
+              : 'Code appliqué : livraison offerte.';
+          feedback.className = 'form-feedback is-ok';
+        }
+        renderCartPage();
+      });
     });
   }
 }

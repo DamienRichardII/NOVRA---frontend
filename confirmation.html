@@ -4,8 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NOVRA</title>
-<meta name="description" content="Votre panier NOVRA : vérifiez vos articles, vos tailles et vos quantités avant de passer commande.">
-<link rel="canonical" href="https://novra-frontend.vercel.app/cart.html">
+<meta name="description" content="Confirmation de votre commande NOVRA.">
+<link rel="canonical" href="https://novra-frontend.vercel.app/confirmation.html">
+<meta name="robots" content="noindex">
 
 <!-- Favicon NOVRA -->
 <link rel="icon" href="assets/icons/favicon.ico?v=3" sizes="any">
@@ -23,7 +24,7 @@
 <meta property="og:site_name" content="NOVRA">
 <meta property="og:title" content="NOVRA">
 <meta property="og:description" content="NOVRA, vêtements et équipements sportifs conçus pour la performance.">
-<meta property="og:url" content="https://novra-frontend.vercel.app/cart.html">
+<meta property="og:url" content="https://novra-frontend.vercel.app/confirmation.html">
 <meta property="og:image" content="https://novra-frontend.vercel.app/assets/novra-social-share-1200x630.png">
 <meta property="og:image:secure_url" content="https://novra-frontend.vercel.app/assets/novra-social-share-1200x630.png">
 <meta property="og:image:type" content="image/png">
@@ -38,7 +39,7 @@
 <meta name="twitter:description" content="NOVRA, vêtements et équipements sportifs conçus pour la performance.">
 <meta name="twitter:image" content="https://novra-frontend.vercel.app/assets/novra-social-share-1200x630.png">
 <meta name="twitter:image:alt" content="NOVRA">
-<meta name="robots" content="noindex, follow">
+<meta name="robots" content="noindex, nofollow">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -53,34 +54,11 @@
 <div id="header-root"></div>
 
 <main id="main">
-  <div class="container">
-    <p class="breadcrumb" style="padding-top:34px"><a href="index.html">Accueil</a><span>/</span>Panier</p>
-    <h1 class="display-2">Panier</h1>
-
-    <div class="cart-page">
-      <div id="cart-page-lines"></div>
-
-      <aside class="cart-summary" id="cart-page-summary" hidden>
-        <h2 class="display-4">Récapitulatif</h2>
-        <div class="promo-row">
-          <label class="sr-only" for="promo-code">Code promotionnel</label>
-          <input type="text" id="promo-code" placeholder="Code promo" autocomplete="off">
-          <button type="button" id="promo-apply">Appliquer</button>
-        </div>
-        <p class="form-feedback" id="promo-feedback" role="status" aria-live="polite"></p>
-        <div class="totals" id="cart-page-totals"></div>
-        <a class="btn btn-block" href="checkout.html">Passer la commande</a>
-        <a class="btn btn-outline btn-block" style="margin-top:10px" href="marketplace.html">Continuer mes achats</a>
-      </aside>
+  <div class="container" style="padding-top:80px;padding-bottom:80px">
+    <div class="confirmation" id="confirmation-root">
+      <p class="lead" style="text-align:center">Vérification de votre paiement…</p>
     </div>
   </div>
-
-  <section class="section-sm section-grey" id="cart-related" hidden>
-    <div class="container">
-      <h2 class="display-3" style="margin-bottom:40px">Vous aimerez aussi</h2>
-      <div class="product-grid" id="cart-related-grid"></div>
-    </div>
-  </section>
 </main>
 
 <div id="footer-root"></div>
@@ -89,5 +67,6 @@
 <script src="js/products.js" defer></script>
 <script src="js/cart.js" defer></script>
 <script src="js/main.js" defer></script>
+<script src="js/confirmation.js" defer></script>
 </body>
 </html>

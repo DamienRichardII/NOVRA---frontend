@@ -179,22 +179,12 @@
     </form>
   </div>
 
-  <!-- Confirmation -->
-  <div class="container" id="confirmation-view" hidden>
-    <div class="confirmation">
-      <div class="confirmation-mark"><svg viewBox="0 0 24 24"><path d="M5 13l4.5 4.5L19 7"/></svg></div>
-      <h1 class="display-3">Commande confirmée</h1>
-      <p class="order-ref" id="order-ref"></p>
-      <p class="lead" style="margin:0 auto 10px">Merci pour votre confiance. Un récapitulatif a été préparé pour l'adresse <strong id="order-email"></strong>.</p>
-      <p style="color:var(--grey-500);font-size:.88rem">Simulation front-end : aucun paiement n'a été encaissé et aucune donnée n'a été transmise.</p>
-      <div id="order-summary" style="margin:34px 0;text-align:left"></div>
-      <a class="btn" href="marketplace.html">Retour à la boutique</a>
-    </div>
-  </div>
+  <!-- La confirmation se fait sur confirmation.html, au retour de Stripe. -->
 </main>
 
 <div id="footer-root"></div>
 
+<script src="js/supabase-config.js" defer></script>
 <script src="js/products.js" defer></script>
 <script src="js/cart.js" defer></script>
 <script src="js/main.js" defer></script>

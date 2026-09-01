@@ -104,39 +104,34 @@ function validateForm(form) {
 
 /* ------------------------- Intégration paiement --------------------------- */
 /**
- * Point d'entrée unique pour brancher un prestataire (Stripe, SumUp…).
- * Remplacer le contenu par l'appel réel puis résoudre la promesse.
+ * Ouvre une session Stripe Checkout et renvoie l'adresse de paiement.
+ *
+ * Le navigateur n'envoie que des références et des quantités : les prix, les
+ * stocks et les remises sont recalculés côté serveur à partir de la base.
+ * Un client qui modifierait le panier dans la console paierait quand même
+ * le bon montant.
  */
-function processPayment(order) {
-  return Promise.resolve({ status: 'simulated', order: order });
+function processPayment(cartLines, customer, address, method, promo) {
+  return novraFunction('create-checkout-session', {
+    method: 'POST',
+    body: {
+      lines: cartLines.map(function (l) {
+        return { slug: l.product.id, color: l.color || null, size: l.size || null, qty: l.qty };
+      }),
+      email: customer.email,
+      shipping: method,
+      promo: promo || '',
+      address: {
+        firstname: customer.firstname, lastname: customer.lastname, phone: customer.phone,
+        address: address.address, address2: address.address2,
+        zip: address.zip, city: address.city, country: address.country
+      }
+    }
+  });
 }
 
-function generateOrderRef() {
-  const d = new Date();
-  const stamp = String(d.getFullYear()).slice(2) + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return 'NVR-' + stamp + '-' + rand;
-}
-
-function showConfirmation(order) {
-  document.getElementById('checkout-view').hidden = true;
-  const view = document.getElementById('confirmation-view');
-  view.hidden = false;
-
-  document.getElementById('order-ref').textContent = order.reference;
-  document.getElementById('order-email').textContent = order.customer.email;
-
-  document.getElementById('order-summary').innerHTML = order.lines.map(function (l) {
-    return '<div class="summary-line">' +
-      '<img src="' + l.image + '" alt="" width="56" height="75">' +
-      '<div><h4>' + l.name + '</h4><span>' + l.meta + '</span></div>' +
-      '<strong>' + formatPrice(l.total) + '</strong>' +
-    '</div>';
-  }).join('') +
-  '<div class="total-row is-total" style="margin-top:16px"><span>Total</span><span>' + formatPrice(order.total) + '</span></div>';
-
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+/* La confirmation vit désormais sur confirmation.html : elle est affichée au
+   retour de Stripe, à partir de la commande réellement enregistrée. */
 
 /* --------------------------------- Init ----------------------------------- */
 document.addEventListener('DOMContentLoaded', function () {
@@ -184,52 +179,42 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     const data = new FormData(form);
-    const ship = shippingPrice();
 
-    const order = {
-      reference: generateOrderRef(),
-      createdAt: new Date().toISOString(),
-      customer: {
-        firstname: data.get('firstname'),
-        lastname: data.get('lastname'),
-        email: data.get('email'),
-        phone: data.get('phone')
-      },
-      shippingAddress: {
-        address: data.get('address'),
-        address2: data.get('address2'),
-        zip: data.get('zip'),
-        city: data.get('city'),
-        country: data.get('country')
-      },
-      shippingMethod: SHIPPING_METHODS[shippingMethod].label,
-      paymentMethod: data.get('payment'),
-      lines: lines.map(function (l) {
-        return {
-          id: l.product.id,
-          name: l.product.name,
-          image: l.product.images[0],
-          meta: (l.color || '') + (l.size && l.size !== 'TU' ? ' / ' + l.size : '') + ' × ' + l.qty,
-          qty: l.qty,
-          total: l.total
-        };
-      }),
-      subtotal: Cart.subtotal(),
-      shipping: ship,
-      total: Cart.subtotal() + ship
+    const customer = {
+      firstname: data.get('firstname'),
+      lastname: data.get('lastname'),
+      email: data.get('email'),
+      phone: data.get('phone')
+    };
+    const address = {
+      address: data.get('address'),
+      address2: data.get('address2'),
+      zip: data.get('zip'),
+      city: data.get('city'),
+      country: data.get('country')
     };
 
     const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Traitement en cours…';
+    submitBtn.textContent = 'Redirection vers le paiement…';
 
-    processPayment(order).then(function () {
-      Cart.clear();
-      showConfirmation(order);
-    }).catch(function () {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Valider la commande';
-      notify('Le traitement de la commande a échoué. Merci de réessayer.', null, true);
-    });
+    processPayment(lines, customer, address, shippingMethod, Cart.promoCode())
+      .then(function (session) {
+        if (!session || !session.url) throw new Error('Paiement indisponible.');
+        /* Le panier n'est vidé qu'au retour d'un paiement confirmé :
+           un client qui abandonne retrouve ses articles intacts. */
+        window.location.href = session.url;
+      })
+      .catch(function (e) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Valider la commande';
+        notify(e.message || 'Le paiement n\'a pas pu être ouvert. Merci de réessayer.', null, true);
+      });
   });
+
+  /* Retour depuis Stripe après un abandon de paiement. */
+  if (new URLSearchParams(location.search).get('paiement') === 'annule') {
+    notify('Paiement annulé. Votre panier a été conservé.', null, true);
+    history.replaceState(null, '', location.pathname);
+  }
 });

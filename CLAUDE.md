@@ -39,7 +39,9 @@ règles RLS : ne jamais placer de `service_role` dans un fichier JavaScript.
 - **Header et footer** : générés par `renderHeader()` / `renderFooter()` dans `js/main.js`. Une seule source, ne pas dupliquer dans les pages.
 - **Cartes produits** : `productCardMarkup()` dans `js/main.js`. Utilisée par l'accueil, la marketplace, la fiche produit et le panier.
 - **Panier** : objet `Cart` dans `js/cart.js`, persistance `localStorage` (clé `novra_cart_v1`).
-- **Paiement** : simulation front-end. Point d'intégration unique = `processPayment()` dans `js/checkout.js`.
+- **Paiement** : Stripe Checkout. `processPayment()` dans `js/checkout.js` appelle la fonction `create-checkout-session`, qui recalcule prix, stocks et remises depuis la base. Ne jamais faire confiance à un montant venu du navigateur. Voir `STRIPE.md`.
+- **Clés secrètes** : uniquement dans les secrets Supabase (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SIGNING_SECRET`, `NOVRA_SITE_URL`). Jamais dans un fichier du dépôt.
+- **Suivi des stocks** : `products.track_inventory`. Éteint, la boutique vend sans compter ; allumé depuis l'écran Stocks, une rupture bloque la commande.
 - **Direction artistique** : noir `#0a0a0a`, blanc, gris. Aucune couleur d'interface. Les couleurs vives ne viennent que des photos produits.
 - **Typographie** : Barlow Condensed (titres, majuscules) + Inter (textes).
 

@@ -419,6 +419,29 @@ async function pageCollections() {
     '</section>';
 }
 
+/* Le suivi des stocks décide si une vente est refusée quand la quantité
+   tombe à zéro. Tant qu'il est éteint, la boutique vend sans compter. */
+function inventoryBanner(prods, total) {
+  const tracked = prods.filter(function (p) { return p.track_inventory; }).length;
+  const all = prods.length;
+
+  if (tracked === all && all > 0) {
+    return '<div class="demo-flag mb-18" style="border-color:var(--green)">' + icon('check', 'icon-sm') +
+      'Suivi des stocks actif : une taille en rupture ne peut plus être commandée sur le site.' +
+      (canEdit() ? ' <button class="btn btn-sm" type="button" id="track-off" style="margin-left:auto">Désactiver</button>' : '') +
+    '</div>';
+  }
+
+  return '<div class="demo-flag mb-18">' + icon('alert', 'icon-sm') +
+    '<span>Le suivi des stocks est <strong>désactivé</strong>' + (tracked ? ' pour ' + (all - tracked) + ' produit(s)' : '') +
+    ' : la boutique accepte les commandes même à zéro. ' +
+    (total === 0
+      ? 'Saisissez d\'abord les quantités ci-dessous, puis activez le suivi.'
+      : 'Activez-le une fois vos quantités vérifiées.') + '</span>' +
+    (canEdit() ? '<button class="btn btn-sm btn-primary" type="button" id="track-on" style="margin-left:auto;flex:none">Activer le suivi</button>' : '') +
+  '</div>';
+}
+
 /* ================================= STOCKS ================================ */
 async function pageStocks() {
   const prods = await loadProducts();
@@ -463,7 +486,7 @@ async function pageStocks() {
       kpiCard({ label: 'Stock faible', value: String(low), icon: 'alert', tone: 'a' }) +
       kpiCard({ label: 'Ruptures', value: String(out), icon: 'xcircle', tone: 'r' }) +
     '</div>' +
-    (total === 0 ? '<div class="mb-18">' + demoFlag('Les stocks ne sont pas encore renseignés. Saisissez les quantités ci-dessous : elles sont enregistrées immédiatement.') + '</div>' : '') +
+    inventoryBanner(prods, total) +
     '<div class="grid-main g-side">' +
       '<section class="card">' + cardHead('Toutes les références', '<span class="badge-count">' + all.length + '</span>') +
         '<div class="table-wrap"><table class="table"><thead><tr><th>Produit</th><th>Couleur</th><th>Taille</th>' +
@@ -489,7 +512,26 @@ async function saveStock(variantId, next, previous) {
   return true;
 }
 
+async function setInventoryTracking(on) {
+  const { error } = await sb.from('products').update({ track_inventory: on }).neq('id', '00000000-0000-0000-0000-000000000000');
+  if (error) { toast('Modification impossible : ' + error.message, 'err'); return; }
+  await logActivity(on ? 'inventory_on' : 'inventory_off', 'products', null);
+  store.products = null; store.stats = null;
+  toast(on ? 'Suivi des stocks activé : les ruptures bloquent désormais la vente.'
+           : 'Suivi des stocks désactivé.', 'ok');
+  route();
+}
+
 function afterStocks() {
+  const on = document.getElementById('track-on');
+  if (on) on.addEventListener('click', function () {
+    if (confirmAction('Activer le suivi des stocks ? Toute taille à zéro deviendra impossible à commander sur le site.')) setInventoryTracking(true);
+  });
+  const off = document.getElementById('track-off');
+  if (off) off.addEventListener('click', function () {
+    if (confirmAction('Désactiver le suivi ? La boutique acceptera des commandes sur des articles en rupture.')) setInventoryTracking(false);
+  });
+
   document.querySelectorAll('[data-stock-for]').forEach(function (inp) {
     const before = Number(inp.value);
     inp.addEventListener('change', async function () {
