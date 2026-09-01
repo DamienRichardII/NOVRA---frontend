@@ -1,10 +1,14 @@
 /* =========================================================================
-   NOVRA — Résumé d'une commande après retour de Stripe
+   NOVRA — Consultation d'une commande par le client
 
-   La page de confirmation ne peut pas lire la table orders : les règles RLS
-   l'interdisent au visiteur anonyme, et c'est voulu. Cette fonction renvoie
-   uniquement ce qui concerne la session de paiement présentée, et rien
-   d'autre : ni adresse complète, ni identifiant interne.
+   Deux façons d'y accéder, toutes deux sans compte :
+     • ?session=cs_…                      au retour du paiement Stripe
+     • ?reference=NVR-…&email=…           depuis la page de suivi
+
+   La table orders reste fermée au visiteur anonyme, et c'est voulu. Cette
+   fonction ne renvoie que la commande demandée, sans identifiant interne et
+   avec l'adresse e-mail partiellement masquée : la page peut être rouverte
+   depuis un historique de navigation ou un lien transféré.
    ========================================================================= */
 
 import { createClient } from 'npm:@supabase/supabase-js@^2';
@@ -24,39 +28,99 @@ const CORS = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
 
+const SELECT =
+  'id, reference, status, fulfilment, subtotal, shipping, discount, total, promo_code, ' +
+  'shipping_method, payment_method, carrier, tracking_number, tracking_url, email, address, ' +
+  'created_at, paid_at, shipped_at, ready_at, completed_at, ' +
+  'order_items(product_name, color, size, qty, unit_price, line_total)';
+
+function maskEmail(value: string) {
+  const [user, domain] = String(value).split('@');
+  if (!domain) return '';
+  return user.slice(0, 2) + '•'.repeat(Math.max(1, user.length - 2)) + '@' + domain;
+}
+
+/* L'adresse complète n'est renvoyée qu'au retour direct du paiement : c'est
+   le seul moment où l'on est certain d'avoir le client devant l'écran. */
+function trimAddress(address: any, full: boolean) {
+  if (!address) return null;
+  if (full) return address;
+  return { city: address.city ?? null, zip: address.zip ?? null, country: address.country ?? null };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
 
-  const sessionId = new URL(req.url).searchParams.get('session') ?? '';
-  /* Un identifiant de session Stripe est long et imprévisible : il fait
-     office de jeton. On refuse tout ce qui n'y ressemble pas. */
-  if (!/^cs_[a-zA-Z0-9_]{20,}$/.test(sessionId)) return json({ error: 'Référence de paiement invalide.' }, 400);
+  const params = new URL(req.url).searchParams;
+  const sessionId = params.get('session') ?? '';
+  const reference = (params.get('reference') ?? '').trim().toUpperCase();
+  const email = (params.get('email') ?? '').trim().toLowerCase();
 
-  const { data: order, error } = await db
-    .from('orders')
-    .select('reference, status, subtotal, shipping, discount, total, shipping_method, email, created_at, order_items(product_name, color, size, qty, line_total)')
-    .eq('stripe_session_id', sessionId)
-    .maybeSingle();
+  let query = db.from('orders').select(SELECT);
+  let fullAddress = false;
+
+  if (sessionId) {
+    /* Un identifiant de session Stripe est long et imprévisible : il fait
+       lui-même office de jeton. */
+    if (!/^cs_[a-zA-Z0-9_]{20,}$/.test(sessionId)) return json({ error: 'Référence de paiement invalide.' }, 400);
+    query = query.eq('stripe_session_id', sessionId);
+    fullAddress = true;
+  } else if (reference && email) {
+    if (!/^NVR-\d{6}-[A-Z0-9]{4}$/.test(reference)) {
+      return json({ error: 'Ce numéro de commande n\'a pas le bon format. Il ressemble à NVR-260901-A1B2.' }, 400);
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email)) return json({ error: 'Adresse e-mail invalide.' }, 400);
+    query = query.eq('reference', reference).eq('email', email);
+  } else {
+    return json({ error: 'Indiquez votre numéro de commande et votre adresse e-mail.' }, 400);
+  }
+
+  const { data: order, error } = await query.maybeSingle();
 
   if (error) return json({ error: 'Lecture impossible.' }, 500);
-  if (!order) return json({ error: 'Commande introuvable.' }, 404);
+  /* Même message que la commande n'existe pas ou que l'e-mail ne corresponde
+     pas : rien ne doit permettre de deviner qu'une référence est valide. */
+  if (!order) return json({ error: 'Aucune commande ne correspond à ces informations.' }, 404);
 
-  /* L'adresse e-mail est partiellement masquée : la page peut être ouverte
-     depuis un lien partagé ou un historique de navigation. */
-  const [user, domain] = String(order.email).split('@');
-  const masked = user.slice(0, 2) + '•'.repeat(Math.max(1, user.length - 2)) + '@' + domain;
+  const { data: events } = await db
+    .from('order_events')
+    .select('status, label, created_at')
+    .eq('order_id', order.id)
+    .order('created_at');
+
+  /* Les informations de retrait ne partent que si le client est concerné. */
+  let store = null;
+  if (order.fulfilment === 'pickup') {
+    const { data } = await db.from('store_settings')
+      .select('name, address, zip, city, phone, email, hours, pickup_note').eq('id', true).maybeSingle();
+    store = data ?? null;
+  }
 
   return json({
     reference: order.reference,
     status: order.status,
-    paid: order.status !== 'pending' && order.status !== 'cancelled',
-    email: masked,
-    created_at: order.created_at,
+    paid: !['pending', 'cancelled'].includes(order.status),
+    cancelled: order.status === 'cancelled',
+    fulfilment: order.fulfilment,
+    email: maskEmail(order.email),
+    address: trimAddress(order.address, fullAddress),
+    store,
     shipping_method: order.shipping_method,
+    payment_method: order.payment_method,
+    carrier: order.carrier,
+    tracking_number: order.tracking_number,
+    tracking_url: order.tracking_url,
+    promo_code: order.promo_code,
     subtotal: order.subtotal,
     shipping: order.shipping,
     discount: order.discount,
     total: order.total,
-    items: order.order_items
+    created_at: order.created_at,
+    paid_at: order.paid_at,
+    shipped_at: order.shipped_at,
+    ready_at: order.ready_at,
+    completed_at: order.completed_at,
+    items: order.order_items,
+    events: events ?? []
   });
 });

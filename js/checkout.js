@@ -1,19 +1,91 @@
 /* =========================================================================
-   NOVRA — Checkout (simulation front-end)
-   Point d'intégration d'un prestataire de paiement : processPayment().
+   NOVRA — Tunnel de commande
+
+   Ces montants ne servent qu'à l'affichage. Le prix réellement encaissé est
+   recalculé par la fonction create-checkout-session à partir de la base :
+   modifier ces valeurs dans la console ne change rien au débit.
    ========================================================================= */
 
 const SHIPPING_METHODS = {
-  standard: { label: 'Livraison standard', price: null },   // null = règle panier (offerte dès 80 €)
-  express:  { label: 'Livraison express', price: 9.9 },
-  pickup:   { label: 'Point relais', price: 2.9 }
+  standard: { label: 'Livraison standard', price: null, fulfilment: 'delivery' },   // null = offerte dès 80 €
+  express:  { label: 'Livraison express',  price: 9.9,  fulfilment: 'delivery' },
+  relay:    { label: 'Point relais',       price: 2.9,  fulfilment: 'relay' },
+  pickup:   { label: 'Retrait en boutique', price: 0,   fulfilment: 'pickup' }
 };
 
 let shippingMethod = 'standard';
+let storeInfo = null;
+
+function isPickup() {
+  return SHIPPING_METHODS[shippingMethod].fulfilment === 'pickup';
+}
 
 function shippingPrice() {
   const method = SHIPPING_METHODS[shippingMethod];
   return method.price === null ? Cart.shipping() : method.price;
+}
+
+/* Le retrait n'apparaît que si la boutique est réellement renseignée en base.
+   Tant qu'elle ne l'est pas, l'option reste cachée plutôt que d'annoncer un
+   retrait impossible. */
+function loadStore() {
+  return novraRest('store_settings?id=eq.true&select=name,address,zip,city,phone,hours,pickup_note')
+    .then(function (rows) {
+      const s = (rows && rows[0]) || null;
+      if (!s || !s.address || !s.city) return null;
+      storeInfo = s;
+
+      const card = document.getElementById('pickup-card');
+      const line = document.getElementById('pickup-line');
+      if (card) card.hidden = false;
+      if (line) line.textContent = [s.address, s.zip, s.city].filter(Boolean).join(', ');
+      return s;
+    })
+    .catch(function () { return null; });
+}
+
+function renderPickupInfo() {
+  const box = document.getElementById('pickup-info');
+  if (!box) return;
+  if (!isPickup() || !storeInfo) { box.hidden = true; box.innerHTML = ''; return; }
+
+  const hours = Array.isArray(storeInfo.hours) ? storeInfo.hours : [];
+  box.hidden = false;
+  box.innerHTML =
+    '<h3>' + (storeInfo.name || 'Boutique NOVRA') + '</h3>' +
+    '<p>' + [storeInfo.address, storeInfo.zip, storeInfo.city].filter(Boolean).join(', ') + '</p>' +
+    (storeInfo.phone ? '<p>' + storeInfo.phone + '</p>' : '') +
+    (hours.length ? '<ul>' + hours.map(function (h) {
+      return '<li><span>' + (h.day || '') + '</span><span>' + (h.hours || '') + '</span></li>';
+    }).join('') + '</ul>' : '') +
+    '<p class="pickup-note">' + (storeInfo.pickup_note ||
+      'Vous serez prévenu par e-mail dès que votre commande sera prête. Munissez-vous de votre numéro de commande.') + '</p>';
+}
+
+/* Champs indispensables à une livraison. La liste est écrite noir sur blanc
+   plutôt que déduite de l'état courant : la fonction peut ainsi être
+   appelée autant de fois qu'on veut sans jamais perdre l'information. */
+const DELIVERY_REQUIRED = ['address', 'zip', 'city'];
+
+/* En retrait, l'adresse postale n'a pas lieu d'être : on la masque et on
+   lève l'obligation de la remplir, sinon le formulaire refuse de partir. */
+function syncAddressStep() {
+  const step = document.getElementById('address-step');
+  if (!step) return;
+  const pickup = isPickup();
+  step.hidden = pickup;
+
+  DELIVERY_REQUIRED.forEach(function (id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.required = !pickup;
+    if (!pickup) return;
+    const field = el.closest('.field');
+    if (!field) return;
+    field.classList.remove('has-error');
+    const holder = field.querySelector('.field-error');
+    if (holder) holder.textContent = '';
+  });
 }
 
 function renderCheckoutSummary() {
@@ -23,9 +95,13 @@ function renderCheckoutSummary() {
 
   const lines = Cart.lines();
 
+  /* Panier vide : on le dit clairement et on empêche de valider dans le vide. */
   if (!lines.length) {
-    linesRoot.innerHTML = '<p style="color:var(--grey-500);font-size:.9rem">Votre panier est vide.</p>';
+    linesRoot.innerHTML = '<p style="color:var(--grey-500);font-size:.9rem">Votre panier est vide.</p>' +
+      '<a class="link-underline" href="marketplace.html">Voir la boutique</a>';
     totalsRoot.innerHTML = '';
+    const submit = document.querySelector('#checkout-form button[type="submit"]');
+    if (submit) { submit.disabled = true; submit.textContent = 'Panier vide'; }
     return;
   }
 
@@ -39,11 +115,16 @@ function renderCheckoutSummary() {
   }).join('');
 
   const sub = Cart.subtotal();
-  const ship = shippingPrice();
+  const disc = Cart.discount();
+  const ship = isPickup() ? 0 : shippingPrice();
+  const code = Cart.promoCode();
+
   totalsRoot.innerHTML =
     '<div class="total-row"><span>Sous-total</span><span>' + formatPrice(sub) + '</span></div>' +
-    '<div class="total-row"><span>Livraison</span><span>' + (ship === 0 ? 'Offerte' : formatPrice(ship)) + '</span></div>' +
-    '<div class="total-row is-total"><span>Total</span><span>' + formatPrice(sub + ship) + '</span></div>';
+    (disc > 0 ? '<div class="total-row"><span>Remise' + (code ? ' (' + code + ')' : '') + '</span><span>− ' + formatPrice(disc) + '</span></div>' : '') +
+    '<div class="total-row"><span>' + (isPickup() ? 'Retrait en boutique' : 'Livraison') + '</span><span>' +
+      (ship === 0 ? (isPickup() ? 'Gratuit' : 'Offerte') : formatPrice(ship)) + '</span></div>' +
+    '<div class="total-row is-total"><span>Total</span><span>' + formatPrice(Math.max(0, sub - disc) + ship) + '</span></div>';
 
   const std = document.querySelector('[data-shipping-standard]');
   if (std) std.textContent = Cart.shipping() === 0 ? 'Offerte' : formatPrice(Cart.shipping());
@@ -111,10 +192,28 @@ function validateForm(form) {
  * Un client qui modifierait le panier dans la console paierait quand même
  * le bon montant.
  */
-function processPayment(cartLines, customer, address, method, promo) {
+/* Jeton stable pour un passage en caisse : un double clic, un rechargement
+   ou une reprise réseau retombent sur la même commande côté serveur. */
+function checkoutToken() {
+  try {
+    let t = sessionStorage.getItem('novra_checkout_token');
+    if (!t) {
+      t = 'chk_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+      sessionStorage.setItem('novra_checkout_token', t);
+    }
+    return t;
+  } catch (e) { return ''; }
+}
+
+function clearCheckoutToken() {
+  try { sessionStorage.removeItem('novra_checkout_token'); } catch (e) { /* navigation privée */ }
+}
+
+function processPayment(cartLines, customer, address, method, promo, token) {
   return novraFunction('create-checkout-session', {
     method: 'POST',
     body: {
+      idempotency_key: token || '',
       lines: cartLines.map(function (l) {
         return { slug: l.product.id, color: l.color || null, size: l.size || null, qty: l.qty };
       }),
@@ -139,24 +238,20 @@ document.addEventListener('DOMContentLoaded', function () {
   if (!form) return;
 
   renderCheckoutSummary();
+  syncAddressStep();
+  loadStore();
 
-  /* Mode de livraison */
-  form.querySelectorAll('input[name="shipping"]').forEach(function (radio) {
-    radio.addEventListener('change', function () {
-      shippingMethod = radio.value;
-      form.querySelectorAll('input[name="shipping"]').forEach(function (r) {
-        r.closest('.radio-card').classList.toggle('is-selected', r.checked);
-      });
-      renderCheckoutSummary();
+  /* Mode de réception */
+  form.addEventListener('change', function (e) {
+    const radio = e.target.closest('input[name="shipping"]');
+    if (!radio) return;
+    shippingMethod = radio.value;
+    form.querySelectorAll('input[name="shipping"]').forEach(function (r) {
+      r.closest('.radio-card').classList.toggle('is-selected', r.checked);
     });
-  });
-
-  form.querySelectorAll('input[name="payment"]').forEach(function (radio) {
-    radio.addEventListener('change', function () {
-      form.querySelectorAll('input[name="payment"]').forEach(function (r) {
-        r.closest('.radio-card').classList.toggle('is-selected', r.checked);
-      });
-    });
+    syncAddressStep();
+    renderPickupInfo();
+    renderCheckoutSummary();
   });
 
   /* Validation à la sortie de champ */
@@ -195,10 +290,11 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;   /* double clic : la première demande suffit */
     submitBtn.disabled = true;
     submitBtn.textContent = 'Redirection vers le paiement…';
 
-    processPayment(lines, customer, address, shippingMethod, Cart.promoCode())
+    processPayment(lines, customer, address, shippingMethod, Cart.promoCode(), checkoutToken())
       .then(function (session) {
         if (!session || !session.url) throw new Error('Paiement indisponible.');
         /* Le panier n'est vidé qu'au retour d'un paiement confirmé :
@@ -206,6 +302,7 @@ document.addEventListener('DOMContentLoaded', function () {
         window.location.href = session.url;
       })
       .catch(function (e) {
+        clearCheckoutToken();   /* la tentative a échoué : on repart sur une neuve */
         submitBtn.disabled = false;
         submitBtn.textContent = 'Valider la commande';
         notify(e.message || 'Le paiement n\'a pas pu être ouvert. Merci de réessayer.', null, true);

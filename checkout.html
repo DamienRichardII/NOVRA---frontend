@@ -87,7 +87,32 @@
         </section>
 
         <section class="checkout-step">
-          <h2><span class="step-num">02</span>Adresse de livraison</h2>
+          <h2><span class="step-num">02</span>Mode de réception</h2>
+          <label class="radio-card is-selected">
+            <input type="radio" name="shipping" value="standard" checked>
+            <span><strong>Livraison standard</strong><span>24-48 h ouvrées, à votre adresse</span></span>
+            <span class="price" data-shipping-standard></span>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="shipping" value="express">
+            <span><strong>Livraison express</strong><span>24 h, commande avant 12 h</span></span>
+            <span class="price">9,90 €</span>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="shipping" value="relay">
+            <span><strong>Point relais</strong><span>2-4 jours ouvrés</span></span>
+            <span class="price">2,90 €</span>
+          </label>
+          <label class="radio-card" id="pickup-card" hidden>
+            <input type="radio" name="shipping" value="pickup">
+            <span><strong>Retrait en boutique</strong><span id="pickup-line">Retrait sur place</span></span>
+            <span class="price">Gratuit</span>
+          </label>
+          <div class="pickup-info" id="pickup-info" hidden></div>
+        </section>
+
+        <section class="checkout-step" id="address-step">
+          <h2><span class="step-num">03</span>Adresse de livraison</h2>
           <div class="field">
             <label for="address">Adresse</label>
             <input type="text" id="address" name="address" autocomplete="address-line1" required>
@@ -121,42 +146,15 @@
         </section>
 
         <section class="checkout-step">
-          <h2><span class="step-num">03</span>Mode de livraison</h2>
-          <label class="radio-card is-selected">
-            <input type="radio" name="shipping" value="standard" checked>
-            <span><strong>Livraison standard</strong><span>24-48 h ouvrées</span></span>
-            <span class="price" data-shipping-standard></span>
-          </label>
-          <label class="radio-card">
-            <input type="radio" name="shipping" value="express">
-            <span><strong>Livraison express</strong><span>24 h, commande avant 12 h</span></span>
-            <span class="price">9,90 €</span>
-          </label>
-          <label class="radio-card">
-            <input type="radio" name="shipping" value="pickup">
-            <span><strong>Retrait en point relais</strong><span>2-4 jours ouvrés</span></span>
-            <span class="price">2,90 €</span>
-          </label>
-        </section>
-
-        <section class="checkout-step">
           <h2><span class="step-num">04</span>Paiement</h2>
           <label class="radio-card is-selected">
             <input type="radio" name="payment" value="card" checked>
-            <span><strong>Carte bancaire</strong><span>Visa, Mastercard, CB</span></span>
-          </label>
-          <label class="radio-card">
-            <input type="radio" name="payment" value="paypal">
-            <span><strong>PayPal</strong><span>Redirection vers votre compte</span></span>
-          </label>
-          <label class="radio-card">
-            <input type="radio" name="payment" value="transfer">
-            <span><strong>Virement bancaire</strong><span>Expédition à réception du paiement</span></span>
+            <span><strong>Carte bancaire</strong><span>Visa, Mastercard, CB, Apple&nbsp;Pay et Google&nbsp;Pay</span></span>
           </label>
 
           <p class="payment-note">
-            Démonstration : aucun paiement n'est réellement encaissé sur cette version du site.
-            L'intégration d'une solution de paiement (Stripe, SumUp ou équivalent) est prévue dans <code>js/checkout.js</code>.
+            Le paiement se fait sur la page sécurisée de Stripe. Vos coordonnées bancaires ne transitent
+            jamais par NOVRA et ne sont pas conservées sur notre site.
           </p>
 
           <label class="check" style="margin-top:10px">

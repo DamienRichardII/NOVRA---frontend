@@ -870,3 +870,45 @@ body.has-solid-header { padding-top: var(--header-h); }
 .size-table { width: 100%; border-collapse: collapse; font-size: .86rem; }
 .size-table th, .size-table td { border: 1px solid var(--line); padding: 10px 12px; text-align: left; }
 .size-table th { background: var(--grey-50); font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; }
+
+/* ============================ RETRAIT EN BOUTIQUE ========================= */
+.pickup-info { border: 1px solid var(--line); border-left: 2px solid var(--black); padding: 18px 20px; margin-top: 4px; }
+.pickup-info h3 { font-size: .9rem; margin: 0 0 8px; text-transform: uppercase; letter-spacing: .04em; }
+.pickup-info p { font-size: .85rem; color: var(--grey-600); margin: 0 0 6px; }
+.pickup-info ul { list-style: none; padding: 0; margin: 12px 0 0; }
+.pickup-info li { display: flex; justify-content: space-between; gap: 20px; font-size: .82rem; color: var(--grey-600); padding: 3px 0; }
+.pickup-info li span:first-child { color: var(--black); }
+.pickup-info .pickup-note { margin-top: 12px; font-size: .8rem; color: var(--grey-500); }
+
+/* ========================= SUIVI DE COMMANDE ============================= */
+.order-track { max-width: 720px; margin: 0 auto; }
+.order-head { border-bottom: 1px solid var(--line); padding-bottom: 24px; margin-bottom: 28px; }
+.order-head .order-ref { font-family: var(--font-display); font-size: 1.6rem; letter-spacing: .06em; margin: 6px 0 0; }
+.order-state { display: inline-block; border: 1px solid var(--black); padding: 5px 12px; font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; }
+.order-state.is-done { background: var(--black); color: #fff; }
+.order-state.is-cancelled { border-color: var(--grey-400); color: var(--grey-500); }
+
+.timeline { list-style: none; padding: 0; margin: 0 0 34px; }
+.timeline li { position: relative; padding: 0 0 26px 34px; }
+.timeline li::before { content: ''; position: absolute; left: 6px; top: 4px; width: 11px; height: 11px; border-radius: 50%; border: 1px solid var(--grey-400); background: #fff; }
+.timeline li::after { content: ''; position: absolute; left: 11px; top: 17px; bottom: 0; width: 1px; background: var(--line); }
+.timeline li:last-child::after { display: none; }
+.timeline li.is-done::before { background: var(--black); border-color: var(--black); }
+.timeline li.is-current::before { box-shadow: 0 0 0 4px rgba(10,10,10,.12); background: var(--black); border-color: var(--black); }
+.timeline strong { display: block; font-size: .92rem; }
+.timeline small { display: block; font-size: .76rem; color: var(--grey-500); margin-top: 2px; }
+.timeline li:not(.is-done) strong { color: var(--grey-500); font-weight: 500; }
+
+.order-block { border-top: 1px solid var(--line); padding-top: 22px; margin-top: 22px; }
+.order-block h3 { font-size: .78rem; text-transform: uppercase; letter-spacing: .1em; color: var(--grey-500); margin: 0 0 12px; }
+.order-block p { font-size: .88rem; margin: 0 0 4px; }
+.order-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+
+.track-form { max-width: 420px; margin: 0 auto; }
+.track-form .field { margin-bottom: 16px; }
+
+@media (max-width: 600px) {
+  .order-head .order-ref { font-size: 1.3rem; }
+  .order-actions .btn { flex: 1 1 100%; text-align: center; }
+  .pickup-info li { flex-direction: column; gap: 0; }
+}

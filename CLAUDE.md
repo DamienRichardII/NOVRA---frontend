@@ -7,10 +7,13 @@ Lire aussi `Damcompany-code-guardrails.md` avant toute intervention.
 
 ```
 index.html  marketplace.html  product.html  cart.html  checkout.html
+confirmation.html  suivi.html
 about.html  contact.html  mentions-legales.html  politique-confidentialite.html  cgv.html
 css/   style.css (design system) · responsive.css · animations.css
 js/    products.js (catalogue) · main.js (noyau) · cart.js · marketplace.js · product.js · checkout.js · contact.js · home.js
 js/    cms.js (pont vers Supabase) · supabase-config.js (clé publiable)
+js/    order-view.js (rendu commande partagé) · confirmation.js · suivi.js
+supabase/functions/  create-checkout-session · stripe-webhook · order-status
 admin/ index.html · admin.js (noyau, CMS, médiathèque) · admin-pages.js (écrans) · admin-ui.js (composants)
 assets/       médias originaux fournis par le client — NE PAS modifier, renommer ou supprimer
 assets/web/   versions optimisées pour le web (générées) — utilisées par le site
@@ -22,7 +25,8 @@ Contenus éditoriaux : `pages`, `page_sections`, `section_drafts`, `section_medi
 `content_versions`, `activity_log`, `admin_profiles`, `admin_invitations`.
 
 Commerce : `products` (11 produits réels), `product_variants` (88 SKU), `stock_movements`,
-`customers`, `orders`, `order_items`, `promotions`.
+`customers`, `orders`, `order_items`, `promotions`, `order_events`, `email_outbox`,
+`store_settings`.
 
 Fonctions : `is_admin()`, `admin_role_of()`, `can_edit_content()`, `publish_section()`,
 `restore_version()`, `admin_dashboard_stats()`. Toutes en `SECURITY DEFINER`, `EXECUTE` révoqué
@@ -42,6 +46,10 @@ règles RLS : ne jamais placer de `service_role` dans un fichier JavaScript.
 - **Paiement** : Stripe Checkout. `processPayment()` dans `js/checkout.js` appelle la fonction `create-checkout-session`, qui recalcule prix, stocks et remises depuis la base. Ne jamais faire confiance à un montant venu du navigateur. Voir `STRIPE.md`.
 - **Clés secrètes** : uniquement dans les secrets Supabase (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SIGNING_SECRET`, `NOVRA_SITE_URL`). Jamais dans un fichier du dépôt.
 - **Suivi des stocks** : `products.track_inventory`. Éteint, la boutique vend sans compter ; allumé depuis l'écran Stocks, une rupture bloque la commande.
+- **Modes de réception** : `orders.fulfilment` vaut `delivery`, `relay` ou `pickup`. Le retrait n'apparaît dans le tunnel que si `store_settings` contient une adresse et une ville.
+- **Cycle de vie** : `pending → paid → preparing → shipped → delivered` en livraison, `→ ready_for_pickup → picked_up` en retrait. Chaque changement écrit une ligne dans `order_events` (page de suivi) et prépare un message dans `email_outbox`.
+- **Suivi client** : sans compte. `suivi.html` interroge `order-status` avec référence **et** e-mail. Ne jamais accepter la référence seule.
+- **E-mails** : `email_outbox` accumule les messages, **aucun n'est envoyé** — aucun prestataire n'est branché. Y greffer l'envoi plus tard, ne pas créer un second système.
 - **Direction artistique** : noir `#0a0a0a`, blanc, gris. Aucune couleur d'interface. Les couleurs vives ne viennent que des photos produits.
 - **Typographie** : Barlow Condensed (titres, majuscules) + Inter (textes).
 
@@ -57,7 +65,9 @@ règles RLS : ne jamais placer de `service_role` dans un fichier JavaScript.
 - Saisie des stocks réels : les 88 variantes sont à 0 (écran Stocks de l'admin).
 - Mentions légales : éditeur, RCS, TVA, hébergeur, directeur de publication.
 - Domaine réel dans les balises `canonical` et Open Graph (actuellement `https://www.novra.fr/`).
-- Branchement d'une solution de paiement : `processPayment()` dans `js/checkout.js` doit écrire dans `orders`, `order_items` et `customers`. Tant que ce n'est pas fait, les écrans Commandes, CRM et Analytics resteront vides — c'est normal et assumé.
+- Clés Stripe à déposer dans les secrets Supabase (voir `STRIPE.md`). Tant qu'elles manquent, aucun paiement n'aboutit et les écrans Commandes, CRM et Analytics restent vides — c'est normal et assumé.
+- Coordonnées de la boutique physique (écran Paramètres de l'admin) : sans elles, l'option « Retrait en boutique » reste masquée dans le tunnel.
+- Envoi des e-mails : choisir un prestataire et lire `email_outbox`. Aucun message ne part aujourd'hui.
 - Formulaires contact et newsletter : aucune adresse saisie n'est enregistrée aujourd'hui.
 - Activer la protection contre les mots de passe compromis dans Supabase Auth (Authentication → Policies).
 

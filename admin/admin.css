@@ -425,3 +425,8 @@
 
 /* Éléments réservés au mobile */
 .sb-overlay, .sb-close, .panel-close { display: none; }
+
+/* Filtres de l'écran Commandes */
+.chip[data-order-filter] { cursor: pointer; }
+.chip[data-order-filter] b { font-weight: 700; opacity: .65; margin-left: 2px; }
+.chip[data-order-filter].is-active b { opacity: 1; }

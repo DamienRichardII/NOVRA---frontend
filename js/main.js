@@ -49,7 +49,7 @@ function renderHeader() {
         '<nav class="main-nav" aria-label="Navigation principale">' + nav + '</nav>' +
         '<div class="header-actions">' +
           '<button class="icon-btn" type="button" data-open-search aria-label="Rechercher un produit">' + ICONS.search + '</button>' +
-          '<a class="icon-btn" href="contact.html" aria-label="Espace client">' + ICONS.user + '</a>' +
+          '<a class="icon-btn" href="suivi.html" aria-label="Suivre ma commande">' + ICONS.user + '</a>' +
           '<button class="icon-btn" type="button" data-open-cart aria-label="Ouvrir le panier">' + ICONS.bag +
             '<span class="cart-count" data-cart-count aria-hidden="true">0</span></button>' +
           '<button class="burger" type="button" data-burger aria-label="Ouvrir le menu" aria-expanded="false">' +
@@ -108,6 +108,7 @@ function renderFooter() {
       ['about.html#engagement', 'Engagement']
     ]},
     { title: 'Aide', links: [
+      ['suivi.html', 'Suivre ma commande'],
       ['contact.html#livraison', 'Livraison et retours'],
       ['contact.html#tailles', 'Guide des tailles'],
       ['contact.html#faq', 'FAQ'],

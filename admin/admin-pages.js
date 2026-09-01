@@ -77,8 +77,10 @@ function firstImage(p) {
 }
 
 const ORDER_LABELS = {
-  pending: ['En attente', 'warning'], paid: ['Payée', 'success'], preparing: ['En préparation', 'warning'],
-  shipped: ['Expédiée', 'info'], delivered: ['Livrée', 'success'],
+  pending: ['Paiement en attente', 'warning'], paid: ['Payée', 'success'],
+  preparing: ['En préparation', 'warning'], shipped: ['Expédiée', 'info'],
+  delivered: ['Livrée', 'success'],
+  ready_for_pickup: ['Prête au retrait', 'info'], picked_up: ['Retirée', 'success'],
   cancelled: ['Annulée', 'danger'], refunded: ['Remboursée', 'danger']
 };
 function orderBadge(status) {
@@ -235,69 +237,229 @@ async function pageDashboard() {
 }
 
 /* ================================ COMMANDES ============================== */
-async function pageOrders() {
-  const orders = await loadOrders();
+/* Deux parcours après paiement : ce qui part chez le client, ce qu'il vient
+   chercher. Chaque étape n'est proposée que si elle a un sens à ce moment. */
+const NEXT_STATUS = {
+  delivery: { paid: 'preparing', preparing: 'shipped', shipped: 'delivered' },
+  relay:    { paid: 'preparing', preparing: 'shipped', shipped: 'delivered' },
+  pickup:   { paid: 'preparing', preparing: 'ready_for_pickup', ready_for_pickup: 'picked_up' }
+};
 
-  if (!orders.length) {
+const STATUS_ACTION = {
+  preparing:        'Mettre en préparation',
+  shipped:          'Marquer comme expédiée',
+  delivered:        'Marquer comme livrée',
+  ready_for_pickup: 'Prête à être retirée',
+  picked_up:        'Marquer comme retirée'
+};
+
+const FULFILMENT_LABEL = {
+  delivery: ['Livraison à domicile', 'truck'],
+  relay:    ['Point relais', 'truck'],
+  pickup:   ['Retrait en boutique', 'bag']
+};
+
+const ORDER_FILTERS = [
+  ['', 'Toutes'], ['todo', 'À traiter'], ['paid', 'Payées'], ['preparing', 'En préparation'],
+  ['shipped', 'Expédiées'], ['ready_for_pickup', 'Prêtes au retrait'],
+  ['delivered', 'Livrées'], ['picked_up', 'Retirées'], ['cancelled', 'Annulées'], ['refunded', 'Remboursées']
+];
+
+function filteredOrders(orders) {
+  const f = app.orderFilter || '';
+  if (!f) return orders;
+  if (f === 'todo') return orders.filter(function (o) { return ['paid', 'preparing', 'ready_for_pickup'].indexOf(o.status) !== -1; });
+  return orders.filter(function (o) { return o.status === f; });
+}
+
+async function pageOrders() {
+  const all = await loadOrders();
+
+  if (!all.length) {
     return '<section class="card">' + cardHead('Commandes') +
       emptyBlock('Aucune commande enregistrée',
-        "Le site simule le paiement pour l'instant : aucune commande n'est écrite en base. " +
-        "Dès qu'une solution de paiement sera branchée dans checkout.js, les commandes s'afficheront ici automatiquement.") +
+        "Les commandes apparaîtront ici dès le premier paiement encaissé. " +
+        "Rien n'est simulé : tant qu'aucun client n'a payé, cet écran reste vide.") +
       '</section>';
   }
 
+  const orders = filteredOrders(all);
+  app.orderList = orders;
+
+  const counts = {};
+  all.forEach(function (o) { counts[o.status] = (counts[o.status] || 0) + 1; });
+  const todo = (counts.paid || 0) + (counts.preparing || 0) + (counts.ready_for_pickup || 0);
+
+  const chips = ORDER_FILTERS.map(function (f) {
+    const n = f[0] === '' ? all.length : f[0] === 'todo' ? todo : (counts[f[0]] || 0);
+    if (!n && f[0]) return '';
+    return '<button type="button" class="chip' + ((app.orderFilter || '') === f[0] ? ' is-active' : '') +
+      '" data-order-filter="' + f[0] + '">' + f[1] + ' <b>' + n + '</b></button>';
+  }).join('');
+
   const rows = orders.map(function (o, i) {
+    const ful = FULFILMENT_LABEL[o.fulfilment] || FULFILMENT_LABEL.delivery;
+    const a = o.address || {};
+    const name = [a.firstname, a.lastname].filter(Boolean).join(' ') || o.email;
     return '<tr data-order="' + i + '"' + (i === 0 ? ' class="is-selected"' : '') + '>' +
       '<td class="c-main nowrap">' + esc(o.reference) + '</td>' +
-      '<td data-l="Client"><div class="t-title">' + esc(o.email) + '</div></td>' +
+      '<td data-l="Client"><div class="t-title">' + esc(name) + '</div><div class="t-sub">' + esc(o.email) + '</div></td>' +
+      '<td data-l="Réception"><span class="nowrap">' + icon(ful[1], 'icon-sm') + ' ' + esc(ful[0]) + '</span></td>' +
       '<td data-l="Date" class="nowrap muted">' + dateFR(o.created_at) + '</td>' +
       '<td data-l="Articles" class="right">' + (o.order_items || []).length + '</td>' +
       '<td data-l="Montant" class="right nowrap">' + money(o.total) + '</td>' +
       '<td data-l="Statut">' + orderBadge(o.status) + '</td></tr>';
   }).join('');
 
-  return '<div class="grid-main g-side">' +
-    '<section class="card">' +
-      cardHead('Toutes les commandes', '<span class="badge-count">' + orders.length + '</span>') +
-      '<div class="table-wrap"><table class="table"><thead><tr><th>Commande</th><th>Client</th><th>Date</th>' +
-      '<th class="right">Articles</th><th class="right">Montant</th><th>Statut</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
-    '</section>' + orderPanel(0) + '</div>';
+  const revenue = all.filter(function (o) { return ['paid', 'preparing', 'shipped', 'ready_for_pickup', 'delivered', 'picked_up'].indexOf(o.status) !== -1; })
+                     .reduce(function (s, o) { return s + Number(o.total); }, 0);
+
+  return '<div class="kpi-row mb-18">' +
+      kpiCard({ label: 'À traiter', value: String(todo), icon: 'alert', tone: todo ? 'a' : 'g', sub: 'Payées ou en cours' }) +
+      kpiCard({ label: 'Commandes', value: String(all.length), icon: 'cart', tone: 'b' }) +
+      kpiCard({ label: 'Encaissé', value: money(revenue), icon: 'euro', tone: 'g' }) +
+      kpiCard({ label: 'Annulées', value: String((counts.cancelled || 0) + (counts.refunded || 0)), icon: 'xcircle', tone: 'r' }) +
+    '</div>' +
+    '<div class="grid-main g-side">' +
+      '<section class="card">' +
+        cardHead('Commandes', '<span class="badge-count">' + orders.length + '</span>') +
+        '<div class="card-pad" style="padding-bottom:0;display:flex;gap:6px;flex-wrap:wrap">' + chips + '</div>' +
+        (orders.length
+          ? '<div class="table-wrap"><table class="table"><thead><tr><th>Commande</th><th>Client</th><th>Réception</th><th>Date</th>' +
+            '<th class="right">Articles</th><th class="right">Montant</th><th>Statut</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
+          : emptyBlock('Aucune commande dans ce filtre', 'Choisissez un autre filtre ci-dessus.')) +
+      '</section>' + orderPanel(0) + '</div>';
 }
 
 function orderPanel(i) {
-  const o = (store.orders || [])[i];
+  const o = (app.orderList || [])[i];
   if (!o) return '<aside class="panel"><div class="panel-body">' + emptyBlock('Aucune commande sélectionnée', '') + '</div></aside>';
+
+  app.orderIndex = i;
+  const ful = FULFILMENT_LABEL[o.fulfilment] || FULFILMENT_LABEL.delivery;
+  const a = o.address || {};
+  const name = [a.firstname, a.lastname].filter(Boolean).join(' ');
 
   const items = (o.order_items || []).map(function (it) {
     return '<div class="list-row"><span class="grow"><span class="name">' + esc(it.product_name) + '</span>' +
-      '<span class="sub">' + esc([it.color, it.size].filter(Boolean).join(' / ')) + ' × ' + it.qty + '</span></span>' +
+      '<span class="sub">' + esc([it.color, it.size].filter(Boolean).join(' / ')) +
+      ' · ' + money(it.unit_price) + ' × ' + it.qty + '</span></span>' +
       '<strong class="nowrap">' + money(it.line_total) + '</strong></div>';
   }).join('');
 
-  const a = o.address || {};
+  /* Une seule action mise en avant : la suivante dans le parcours. */
+  const next = (NEXT_STATUS[o.fulfilment] || NEXT_STATUS.delivery)[o.status];
+  const closed = ['delivered', 'picked_up', 'cancelled', 'refunded'].indexOf(o.status) !== -1;
+
+  const shipBlock = (o.fulfilment !== 'pickup' && ['preparing', 'shipped', 'delivered'].indexOf(o.status) !== -1)
+    ? '<div class="lbl" style="margin-top:18px">Suivi du colis</div>' +
+      '<div class="field-row">' +
+        field('Transporteur', input('o-carrier', o.carrier || '', { placeholder: 'Colissimo' })) +
+        field('N° de suivi', input('o-tracking', o.tracking_number || '', { placeholder: '6A12345678901' })) + '</div>' +
+      field('Lien de suivi', input('o-trackurl', o.tracking_url || '', { placeholder: 'https://…' })) +
+      (canEdit() ? '<button class="btn btn-sm btn-block" type="button" id="o-save-tracking">Enregistrer le suivi</button>' : '')
+    : '';
+
   return '<aside class="panel">' +
     '<div class="panel-head"><h2>' + esc(o.reference) + '</h2>' + orderBadge(o.status) + '</div>' +
     '<div class="panel-body">' +
-      '<div class="lbl">Articles</div>' + (items || '<p class="dim">Aucune ligne.</p>') +
-      '<div class="lbl" style="margin-top:16px">Client</div>' +
-      '<p>' + esc(o.email) + '</p>' +
-      (a.address ? '<p class="dim">' + esc([a.address, a.zip, a.city, a.country].filter(Boolean).join(', ')) + '</p>' : '') +
-      '<div class="lbl" style="margin-top:16px">Montants</div>' +
+
+      '<div class="lbl">Mode de réception</div>' +
+      '<p>' + icon(ful[1], 'icon-sm') + ' ' + esc(ful[0]) + '</p>' +
+      (o.fulfilment === 'pickup'
+        ? '<p class="dim" style="font-size:11px">Le client vient chercher sa commande en boutique.</p>'
+        : (a.address
+            ? '<p class="dim">' + esc([a.address, a.address2, a.zip, a.city, a.country].filter(Boolean).join(', ')) + '</p>'
+            : '<p class="dim">Adresse non renseignée.</p>')) +
+
+      '<div class="lbl" style="margin-top:18px">Client</div>' +
+      (name ? '<p>' + esc(name) + '</p>' : '') +
+      '<p class="dim">' + esc(o.email) + '</p>' +
+      (a.phone ? '<p class="dim">' + esc(a.phone) + '</p>' : '') +
+
+      '<div class="lbl" style="margin-top:18px">Articles</div>' + (items || '<p class="dim">Aucune ligne.</p>') +
+
+      '<div class="lbl" style="margin-top:18px">Montants</div>' +
       '<div class="total-row"><span>Sous-total</span><span>' + money(o.subtotal) + '</span></div>' +
-      '<div class="total-row"><span>Livraison</span><span>' + money(o.shipping) + '</span></div>' +
-      (Number(o.discount) ? '<div class="total-row"><span>Remise</span><span>− ' + money(o.discount) + '</span></div>' : '') +
+      (Number(o.discount) ? '<div class="total-row"><span>Remise' + (o.promo_code ? ' (' + esc(o.promo_code) + ')' : '') + '</span><span>− ' + money(o.discount) + '</span></div>' : '') +
+      '<div class="total-row"><span>' + esc(o.shipping_method || 'Livraison') + '</span><span>' + (Number(o.shipping) === 0 ? 'Offerte' : money(o.shipping)) + '</span></div>' +
       '<div class="total-row is-total"><span>Total</span><span>' + money(o.total) + '</span></div>' +
-    '</div></aside>';
+      '<p class="dim" style="font-size:11px;margin-top:6px">' + esc(o.payment_method || '—') +
+        (o.paid_at ? ' · payée le ' + dateTimeFR(o.paid_at) : '') + '</p>' +
+
+      shipBlock +
+
+      (o.status === 'pending'
+        ? '<p class="dim" style="margin-top:18px;font-size:11px">Paiement non confirmé. Cette commande passera d\'elle-même en ' +
+          '« Payée » dès que Stripe l\'aura validée, ou sera annulée automatiquement.</p>' : '') +
+    '</div>' +
+
+    (canEdit() && !closed
+      ? '<div class="panel-foot">' +
+          (next ? '<button class="btn btn-primary btn-block" type="button" id="o-advance" data-next="' + next + '">' +
+            icon('check', 'icon-sm') + esc(STATUS_ACTION[next]) + '</button>' : '') +
+          (o.status !== 'pending' ? '<button class="btn btn-danger" type="button" id="o-cancel">Annuler</button>' : '') +
+        '</div>'
+      : '') +
+  '</aside>';
 }
 
-/* Sélection d'une ligne : le panneau de droite suit la commande cliquée. */
+async function setOrderStatus(id, status) {
+  const { error } = await sb.from('orders').update({ status: status }).eq('id', id);
+  if (error) { toast('Statut non modifié : ' + error.message, 'err'); return false; }
+  await logActivity('order_status', 'orders', id, { status: status });
+  store.orders = null; store.stats = null;
+  toast('Commande mise à jour. Le client peut la suivre en ligne.', 'ok');
+  return true;
+}
+
 function afterOrders() {
+  document.querySelectorAll('[data-order-filter]').forEach(function (b) {
+    b.addEventListener('click', function () { app.orderFilter = b.dataset.orderFilter; route(); });
+  });
+
   document.querySelectorAll('[data-order]').forEach(function (tr) {
     tr.addEventListener('click', function () {
       const panel = document.querySelector('.panel');
       if (panel) panel.outerHTML = orderPanel(+tr.dataset.order);
       wirePanel();
+      bindOrderPanel();
     });
+  });
+
+  bindOrderPanel();
+}
+
+function bindOrderPanel() {
+  const o = (app.orderList || [])[app.orderIndex || 0];
+  if (!o) return;
+
+  const adv = document.getElementById('o-advance');
+  if (adv) adv.addEventListener('click', async function () {
+    adv.disabled = true;
+    if (await setOrderStatus(o.id, adv.dataset.next)) route(); else adv.disabled = false;
+  });
+
+  const cancel = document.getElementById('o-cancel');
+  if (cancel) cancel.addEventListener('click', async function () {
+    if (!confirmAction('Annuler cette commande ? Le remboursement éventuel se fait depuis Stripe.')) return;
+    if (await setOrderStatus(o.id, 'cancelled')) route();
+  });
+
+  const save = document.getElementById('o-save-tracking');
+  if (save) save.addEventListener('click', async function () {
+    save.disabled = true;
+    const { error } = await sb.from('orders').update({
+      carrier: document.getElementById('o-carrier').value.trim() || null,
+      tracking_number: document.getElementById('o-tracking').value.trim() || null,
+      tracking_url: document.getElementById('o-trackurl').value.trim() || null
+    }).eq('id', o.id);
+    save.disabled = false;
+    if (error) { toast('Suivi non enregistré : ' + error.message, 'err'); return; }
+    await logActivity('order_tracking', 'orders', o.id);
+    store.orders = null;
+    toast('Informations de suivi enregistrées', 'ok');
+    route();
   });
 }
 
@@ -724,7 +886,85 @@ async function pageAnalytics() {
 }
 
 /* ================================ PARAMÈTRES ============================= */
-function pageSettings() {
+const WEEK = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+
+/* Coordonnées de la boutique physique. Tant qu'elles sont vides, l'option
+   « Retrait en boutique » n'apparaît pas dans le tunnel de commande : mieux
+   vaut ne rien proposer que d'annoncer un retrait impossible. */
+function storeCard(s) {
+  const hours = Array.isArray(s.hours) ? s.hours : [];
+  const byDay = {};
+  hours.forEach(function (h) { byDay[h.day] = h.hours; });
+
+  const ready = Boolean(s.address && s.city);
+
+  return '<section class="card settings-card">' +
+    '<div class="card-head"><h3 style="display:flex;align-items:center;gap:9px">' + icon('home') + 'Boutique physique et retrait</h3>' +
+      badge(ready ? 'Retrait actif' : 'Retrait indisponible', ready ? 'success' : 'warning') + '</div>' +
+    '<div class="card-pad">' +
+      (ready ? '' : '<p class="dim" style="margin-top:0;font-size:12px">Renseignez au minimum l\'adresse et la ville : ' +
+        'l\'option de retrait apparaîtra alors automatiquement dans le tunnel de commande.</p>') +
+      field('Nom affiché', input('st-name', s.name || '', { placeholder: 'Boutique NOVRA' })) +
+      field('Adresse', input('st-address', s.address || '', { placeholder: '12 rue de la Paix' })) +
+      '<div class="field-row">' +
+        field('Code postal', input('st-zip', s.zip || '', { placeholder: '75002' })) +
+        field('Ville', input('st-city', s.city || '', { placeholder: 'Paris' })) + '</div>' +
+      '<div class="field-row">' +
+        field('Téléphone', input('st-phone', s.phone || '', { placeholder: '01 23 45 67 89' })) +
+        field('E-mail boutique', input('st-email', s.email || '', { type: 'email' })) + '</div>' +
+
+      '<div class="lbl" style="margin-top:16px">Horaires d\'ouverture</div>' +
+      '<p class="dim" style="font-size:11px;margin-top:-4px">Laissez vide un jour de fermeture : il ne sera pas affiché au client.</p>' +
+      WEEK.map(function (d) {
+        return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">' +
+          '<span style="width:88px;font-size:12px">' + d + '</span>' +
+          '<input class="input" id="st-h-' + d + '" value="' + esc(byDay[d] || '') + '" placeholder="10h – 19h" style="flex:1">' +
+        '</div>';
+      }).join('') +
+
+      field('Consigne de retrait', '<textarea class="textarea" id="st-note" placeholder="Présentez votre numéro de commande au comptoir.">' +
+        esc(s.pickup_note || '') + '</textarea>') +
+    '</div>' +
+    (canEdit()
+      ? '<div class="card-foot"><button class="btn btn-primary" type="button" id="st-save">Enregistrer la boutique</button></div>'
+      : '<div class="card-foot"><span class="dim">Votre rôle ne permet pas de modifier ces informations.</span></div>') +
+  '</section>';
+}
+
+async function saveStore() {
+  const hours = WEEK.map(function (d) {
+    const v = (document.getElementById('st-h-' + d).value || '').trim();
+    return v ? { day: d, hours: v } : null;
+  }).filter(Boolean);
+
+  const { error } = await sb.from('store_settings').update({
+    name: document.getElementById('st-name').value.trim() || null,
+    address: document.getElementById('st-address').value.trim() || null,
+    zip: document.getElementById('st-zip').value.trim() || null,
+    city: document.getElementById('st-city').value.trim() || null,
+    phone: document.getElementById('st-phone').value.trim() || null,
+    email: document.getElementById('st-email').value.trim() || null,
+    pickup_note: document.getElementById('st-note').value.trim() || null,
+    hours: hours,
+    updated_at: new Date().toISOString()
+  }).eq('id', true);
+
+  if (error) { toast('Enregistrement impossible : ' + error.message, 'err'); return; }
+  await logActivity('update_store', 'store_settings', null);
+  store.settings = null;
+  toast('Boutique enregistrée', 'ok');
+  route();
+}
+
+function afterSettings() {
+  const b = document.getElementById('st-save');
+  if (b) b.addEventListener('click', function () { b.disabled = true; saveStore().finally(function () { b.disabled = false; }); });
+}
+
+async function pageSettings() {
+  const { data } = await sb.from('store_settings').select('*').eq('id', true).maybeSingle();
+  const s = data || {};
+
   const card = function (ico, title, body, foot) {
     return '<section class="card settings-card">' +
       '<div class="card-head"><h3 style="display:flex;align-items:center;gap:9px">' + icon(ico) + esc(title) + '</h3></div>' +
@@ -736,6 +976,7 @@ function pageSettings() {
   };
 
   return '<div class="settings-grid">' +
+    storeCard(s) +
     card('settings', 'Général',
       field('Nom de la boutique', input('s-name', 'NOVRA')) +
       field('Email de contact', input('s-mail', 'contact@novra.com', { type: 'email' })) +

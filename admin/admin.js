@@ -16,7 +16,10 @@ const app = {
   slide: 0,        // média actif dans l'éditeur
   library: [],
   libFolder: '',
-  libSelected: null
+  libSelected: null,
+  orderFilter: '',   // filtre actif de l'écran Commandes
+  orderList: [],     // commandes affichées après filtrage
+  orderIndex: 0      // commande ouverte dans le panneau latéral
 };
 
 /* ------------------------------ Navigation ------------------------------ */
@@ -263,6 +266,7 @@ async function route() {
   if (view === 'promotions') afterPromotions();
   if (view === 'commandes') afterOrders();
   if (view === 'produits') afterProducts();
+  if (view === 'parametres') afterSettings();
 }
 
 window.addEventListener('hashchange', route);
