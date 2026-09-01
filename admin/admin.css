@@ -210,6 +210,24 @@
 .slide-thumb.is-off { opacity: .4; }
 
 .editor-grid { display: grid; grid-template-columns: 1fr 240px; gap: var(--sp-5); }
+/* Liste des médias d'un diaporama : ordre, affichage, retrait */
+.media-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.media-row {
+  display: flex; align-items: center; gap: 10px; padding: 6px;
+  border: 1px solid var(--border); border-radius: var(--r-md);
+  background: var(--surface-2); cursor: pointer; transition: border-color .15s;
+}
+.media-row:hover { border-color: var(--text-3); }
+.media-row.is-active { border-color: var(--text-1); background: var(--surface-3); }
+.media-row.is-off { opacity: .55; }
+.media-row img { width: 54px; height: 36px; object-fit: cover; border-radius: 4px; flex: none; background: var(--surface-3); }
+.media-row .grow { min-width: 0; flex: 1; }
+.media-row strong { display: block; font-size: var(--fs-sm); font-weight: 600; }
+.media-row small { display: block; font-size: 10px; color: var(--text-3); }
+.media-row-acts { display: flex; gap: 2px; flex: none; }
+.media-row-acts .btn-icon { width: 26px; height: 26px; padding: 0; }
+.media-row-acts .btn-icon:disabled { opacity: .3; cursor: not-allowed; }
+
 .media-slot { margin-bottom: 14px; }
 .media-slot > span { display: block; font-size: var(--fs-sm); color: var(--text-2); margin-bottom: 6px; }
 .media-slot .row { display: flex; gap: 10px; align-items: center; }

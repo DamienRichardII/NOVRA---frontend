@@ -23,11 +23,11 @@ const app = {
 const NAV = [
   { group: 'Dashboard', items: [['dashboard', 'Dashboard', 'dashboard']] },
   { group: 'Commerce', items: [
-    ['commandes', 'Commandes', 'orders', 24], ['produits', 'Produits', 'products'],
+    ['commandes', 'Commandes', 'orders'], ['produits', 'Produits', 'products'],
     ['collections', 'Collections', 'collections'], ['stocks', 'Stocks', 'stocks'],
     ['promotions', 'Promotions', 'promotions']] },
   { group: 'Clients', items: [
-    ['clients', 'CRM Clients', 'crm'], ['avis', 'Avis', 'reviews', 12], ['sav', 'Retours / SAV', 'returns', 6]] },
+    ['clients', 'CRM Clients', 'crm'], ['avis', 'Avis', 'reviews'], ['sav', 'Retours / SAV', 'returns']] },
   { group: 'Contenu', items: [
     ['contenus', 'Médias & Contenus', 'media'], ['mediatheque', 'Médiathèque', 'library']] },
   { group: 'Marketing', items: [
@@ -38,22 +38,22 @@ const NAV = [
 ];
 
 const PAGES = {
-  dashboard:      { title: 'Dashboard', sub: "Vue d'ensemble de votre activité e-commerce", actions: ['draft', 'theme', 'period'] },
-  commandes:      { title: 'Commandes', sub: 'Gérez et suivez toutes vos commandes.', actions: ['preview', 'draft', 'theme', 'publish'] },
-  produits:       { title: 'Produits', sub: 'Gérez votre catalogue produit, variantes, stocks et informations associées.', actions: ['preview', 'draft', 'theme', 'publish'] },
-  collections:    { title: 'Collections', sub: 'Organisez vos produits en collections et gérez leur affichage.', actions: ['preview', 'draft', 'theme', 'publish'] },
-  stocks:         { title: 'Stocks', sub: 'Gérez vos stocks, suivez les niveaux, les mouvements et anticipez vos réassorts.', actions: ['draft', 'theme', 'publish'] },
-  promotions:     { title: 'Promotions', sub: 'Gérez vos codes promo, offres spéciales et bons de réduction.', actions: ['preview', 'draft', 'theme', 'newpromo'] },
-  clients:        { title: 'CRM Clients', sub: 'Gérez vos clients, suivez leur activité et développez des relations durables.', actions: ['preview', 'draft', 'theme', 'publish'] },
+  dashboard:      { title: 'Dashboard', sub: "Vue d'ensemble de votre activité", actions: ['theme'] },
+  commandes:      { title: 'Commandes', sub: 'Suivi des commandes enregistrées en base.', actions: ['theme'] },
+  produits:       { title: 'Produits', sub: 'Catalogue réel, variantes et stocks.', actions: ['preview', 'theme'] },
+  collections:    { title: 'Collections', sub: 'Regroupements issus des catégories du catalogue.', actions: ['preview', 'theme'] },
+  stocks:         { title: 'Stocks', sub: 'Saisissez les quantités disponibles : chaque modification est enregistrée aussitôt.', actions: ['theme'] },
+  promotions:     { title: 'Promotions', sub: 'Codes promo et bons de réduction.', actions: ['theme'] },
+  clients:        { title: 'CRM Clients', sub: 'Fiches clients issues des commandes et des inscriptions.', actions: ['theme'] },
   avis:           { title: 'Avis', sub: 'Modérez et publiez les avis laissés par vos clients.', actions: ['theme'] },
   sav:            { title: 'Retours / SAV', sub: 'Traitez les demandes de retour, échanges et remboursements.', actions: ['theme'] },
   contenus:       { title: 'Médias & Contenus', sub: "Gérez vos contenus et médias visuels. Modifiez photos, vidéos, légendes, CTA et l'ordre des sections du site sans toucher au code.", actions: ['preview', 'draft', 'theme', 'publish'] },
   mediatheque:    { title: 'Médiathèque', sub: 'Centralisez, organisez et gérez tous vos médias.', actions: ['theme', 'upload'] },
   newsletter:     { title: 'Newsletter', sub: 'Gérez vos abonnés, segments et campagnes.', actions: ['theme'] },
-  analytics:      { title: 'Analytics', sub: 'Suivez vos performances et analysez les données clés de votre boutique.', actions: ['theme', 'export'] },
+  analytics:      { title: 'Analytics', sub: 'Suivez vos performances et analysez les données clés de votre boutique.', actions: ['theme'] },
   journal:        { title: "Journal d'activité", sub: 'Historique des actions réalisées dans le back-office.', actions: ['theme'] },
   administrateurs:{ title: 'Administrateurs', sub: 'Gérez les accès, rôles et permissions de votre équipe.', actions: ['theme'] },
-  parametres:     { title: 'Paramètres', sub: 'Gérez les paramètres généraux de votre boutique et personnalisez votre expérience.', actions: ['preview', 'draft', 'theme', 'save'] }
+  parametres:     { title: 'Paramètres', sub: 'Gérez les paramètres généraux de votre boutique et personnalisez votre expérience.', actions: ['theme'] }
 };
 
 const ROLE_VIEWS = {
@@ -143,6 +143,7 @@ async function boot() {
   }
 
   app.profile = profile;
+  storeReset();   /* aucune donnée d'une session précédente ne survit */
   document.getElementById('login-view').hidden = true;
   document.getElementById('app-view').hidden = false;
   window.scrollTo(0, 0);
@@ -184,11 +185,8 @@ function renderHeaderActions() {
       icon('sun', 'icon-sm') + '<span>' + (dark ? 'Mode sombre' : 'Mode clair') + '</span></div>',
     publish: '<button class="btn btn-primary" type="button" id="hdr-publish">' + icon('publish', 'icon-sm') + '<span>Publier</span></button>',
     save: '<button class="btn btn-primary" type="button" id="hdr-publish">' + icon('check', 'icon-sm') + '<span>Enregistrer</span></button>',
-    newpromo: '<button class="btn btn-primary" type="button">' + icon('plus', 'icon-sm') + '<span>Nouvelle promotion</span></button>',
     upload: '<label class="btn btn-primary">' + icon('upload', 'icon-sm') + '<span>Téléverser</span>' +
-      '<input type="file" id="hdr-upload" accept="image/*,video/mp4,video/webm" multiple hidden></label>',
-    export: '<button class="btn" type="button">' + icon('download', 'icon-sm') + '<span>Exporter</span></button>',
-    period: '<button class="btn" type="button">' + icon('calendar', 'icon-sm') + '<span>18 mai – 24 mai 2025</span>' + icon('chevronD', 'icon-sm') + '</button>'
+      '<input type="file" id="hdr-upload" accept="image/png,image/jpeg,image/webp,image/avif,video/mp4" multiple hidden></label>'
   };
   document.getElementById('header-actions').innerHTML = cfg.actions.map(function (a) { return parts[a] || ''; }).join('');
 
@@ -242,7 +240,16 @@ async function route() {
     contenus: pageContents, mediatheque: pageLibrary
   }[view];
 
-  const html = await render();
+  /* Une erreur sur un écran ne doit jamais laisser une page vide sans
+     explication : on affiche le message plutôt qu'un squelette figé. */
+  let html;
+  try {
+    html = await render();
+  } catch (e) {
+    html = '<section class="card"><div class="card-pad"><h3>Cet écran n\'a pas pu s\'afficher</h3>' +
+      '<p class="dim">' + esc(e.message) + '</p>' +
+      '<p class="dim" style="font-size:11px">Signalez ce message à votre développeur.</p></div></section>';
+  }
   host.innerHTML = html;
   window.scrollTo(0, 0);
 
@@ -252,6 +259,10 @@ async function route() {
   if (view === 'mediatheque') afterLibrary();
   if (view === 'dashboard') loadDashboardActivity();
   if (view === 'administrateurs') afterAdmins();
+  if (view === 'stocks') afterStocks();
+  if (view === 'promotions') afterPromotions();
+  if (view === 'commandes') afterOrders();
+  if (view === 'produits') afterProducts();
 }
 
 window.addEventListener('hashchange', route);
@@ -300,8 +311,10 @@ function wirePanel() {
     head.appendChild(b);
   }
   document.querySelectorAll('#admin-content .table tbody tr').forEach(function (tr) {
+    if (tr.dataset.wired) return;   /* jamais deux écouteurs sur la même ligne */
+    tr.dataset.wired = '1';
     tr.addEventListener('click', function (e) {
-      if (e.target.closest('input, .toggle')) return;
+      if (e.target.closest('input, .toggle, button')) return;
       document.querySelectorAll('#admin-content .table tbody tr').forEach(function (x) { x.classList.remove('is-selected'); });
       tr.classList.add('is-selected');
       openPanel(true);
@@ -489,6 +502,25 @@ function bindSlideshowBar() {
   if (mg) mg.addEventListener('click', function () { document.getElementById('cms-editor').scrollIntoView({ behavior: 'smooth' }); });
 }
 
+/* Gestion des médias d'un diaporama : ordre, affichage, retrait. */
+function mediaList() {
+  const editable = canEdit();
+  return '<div class="media-list">' + app.media.map(function (m, i) {
+    const off = m.active === false;
+    const act = function (a, label, disabled) {
+      return '<button class="btn btn-icon btn-sm" type="button" data-media-act="' + a + '" data-idx="' + i +
+        '" title="' + label + '" aria-label="' + label + '"' + (disabled ? ' disabled' : '') + '>' + icon(a === 'del' ? 'trash' : a === 'off' ? (off ? 'eye-off' : 'eye') : a === 'up' ? 'arrow-up' : 'arrow-down', 'icon-sm') + '</button>';
+    };
+    return '<div class="media-row ' + (i === app.slide ? 'is-active' : '') + (off ? ' is-off' : '') + '" data-pick-slide="' + i + '">' +
+      '<img src="' + esc(mediaSrc(m.poster_desktop_url || m.desktop_url)) + '" alt="">' +
+      '<span class="grow"><strong>Slide ' + (i + 1) + '</strong><small>' +
+        (m.media_type === 'video' ? 'Vidéo' : 'Image') + (off ? ' · masqué' : '') + '</small></span>' +
+      (editable ? '<span class="media-row-acts">' + act('up', 'Monter', i === 0) + act('down', 'Descendre', i === app.media.length - 1) +
+        act('off', off ? 'Afficher' : 'Masquer') + act('del', 'Retirer', app.media.length < 2) + '</span>' : '') +
+    '</div>';
+  }).join('') + '</div>';
+}
+
 function renderEditor() {
   const d = app.draft, m = app.media[app.slide];
   const positions = [['top-left','Haut gauche'],['top-center','Haut centre'],['top-right','Haut droite'],
@@ -534,9 +566,10 @@ function renderEditor() {
       '</div>' +
 
       '<div><div class="lbl">Médias</div>' +
+        (app.media.length > 1 ? mediaList() : '') +
         (m ? mediaSlot('Image desktop', m.desktop_url, m.media_type === 'video' ? 'Vidéo MP4' : 'JPG', 'desktop') : '') +
-        (m ? mediaSlot('Image mobile', m.mobile_url || m.desktop_url, 'JPG', 'mobile') : '') +
-        (m && m.poster_desktop_url ? mediaSlot('Poster', m.poster_desktop_url, 'JPG', 'poster') : '') +
+        (m ? mediaSlot('Image mobile', m.mobile_url || m.desktop_url, m.mobile_url ? 'JPG' : 'Reprend le desktop', 'mobile') : '') +
+        (m && m.media_type === 'video' ? mediaSlot('Poster (image d\'attente)', m.poster_desktop_url, m.poster_desktop_url ? 'JPG' : 'Aucun', 'poster') : '') +
         focalPick('Point focal desktop', 'desktop') +
         focalPick('Point focal mobile', 'mobile') +
         (canEdit() ? '<label class="btn btn-sm btn-block">' + icon('plus', 'icon-sm') + 'Ajouter un média' +
@@ -594,20 +627,70 @@ function bindEditor() {
 
   document.querySelectorAll('[data-replace]').forEach(function (b) {
     b.addEventListener('click', function () {
+      /* L'index est figé AVANT le téléversement : changer de slide pendant
+         l'envoi ne doit pas écrire la photo sur le mauvais média. */
+      const target = app.media[app.slide];
+      const kind = b.dataset.replace;
+      if (!target) return;
+
       const inp = document.createElement('input');
       inp.type = 'file'; inp.accept = 'image/*,video/mp4';
       inp.onchange = async function () {
         if (!inp.files.length) return;
+        b.disabled = true;
+        const label = b.textContent;
+        b.textContent = 'Envoi…';
         const up = await uploadFile(inp.files[0]);
+        b.disabled = false; b.textContent = label;
         if (!up) return;
-        const m = app.media[app.slide];
-        if (b.dataset.replace === 'mobile') m.mobile_url = up.url;
-        else if (b.dataset.replace === 'poster') m.poster_desktop_url = up.url;
-        else { m.desktop_url = up.url; m.media_type = up.mime.indexOf('video') === 0 ? 'video' : 'image'; }
+        const isVideo = up.mime.indexOf('video') === 0;
+        if (kind === 'mobile') {
+          if (isVideo) { toast('Le visuel mobile doit être une image.', 'err'); return; }
+          target.mobile_url = up.url;
+        } else if (kind === 'poster') {
+          if (isVideo) { toast('Le poster doit être une image.', 'err'); return; }
+          target.poster_desktop_url = up.url;
+        } else {
+          target.desktop_url = up.url;
+          target.media_type = isVideo ? 'video' : 'image';
+        }
         renderCenter(); renderEditor();
-        toast('Média remplacé dans le brouillon', 'ok');
+        toast('Média remplacé. Pensez à publier pour le voir en ligne.', 'ok');
       };
       inp.click();
+    });
+  });
+
+  document.querySelectorAll('[data-pick-slide]').forEach(function (r) {
+    r.addEventListener('click', function () {
+      app.slide = +r.dataset.pickSlide; renderCenter(); renderEditor();
+    });
+  });
+
+  document.querySelectorAll('[data-media-act]').forEach(function (b) {
+    b.addEventListener('click', function (e) {
+      e.stopPropagation();
+      const i = +b.dataset.idx;
+      const act = b.dataset.mediaAct;
+      if (!canEdit() || !app.media[i]) return;
+
+      if (act === 'del') {
+        if (app.media.length < 2) { toast('Une section doit garder au moins un média.', 'err'); return; }
+        if (!confirm('Retirer ce média du diaporama ? Il restera dans la médiathèque.')) return;
+        app.media.splice(i, 1);
+      } else if (act === 'off') {
+        const on = app.media.filter(function (m) { return m.active !== false; }).length;
+        if (app.media[i].active !== false && on < 2) { toast('Au moins un média doit rester affiché.', 'err'); return; }
+        app.media[i].active = app.media[i].active === false;
+      } else if (act === 'up' && i > 0) {
+        app.media.splice(i - 1, 0, app.media.splice(i, 1)[0]);
+      } else if (act === 'down' && i < app.media.length - 1) {
+        app.media.splice(i + 1, 0, app.media.splice(i, 1)[0]);
+      } else return;
+
+      app.media.forEach(function (m, k) { m.sort_order = k; });
+      if (app.slide > app.media.length - 1) app.slide = app.media.length - 1;
+      renderCenter(); renderEditor();
     });
   });
 
@@ -615,6 +698,7 @@ function bindEditor() {
   if (add) add.addEventListener('change', async function () {
     if (!add.files.length) return;
     const up = await uploadFile(add.files[0]);
+    add.value = '';   /* sinon réimporter le même fichier ne déclenche rien */
     if (!up) return;
     app.media.push({
       media_type: up.mime.indexOf('video') === 0 ? 'video' : 'image',
@@ -640,8 +724,12 @@ function bindEditor() {
   });
 }
 
-async function saveDraft() {
-  if (!app.section) return;
+async function saveDraft(opts) {
+  if (!app.section) return false;
+  if (!app.media.filter(function (m) { return m.active !== false && m.desktop_url; }).length) {
+    toast('Cette section doit garder au moins un visuel affiché.', 'err');
+    return false;
+  }
   const payload = Object.assign({}, app.draft, {
     media: app.media.map(function (m, i) { return Object.assign({}, m, { sort_order: i }); })
   });
@@ -649,33 +737,68 @@ async function saveDraft() {
     section_id: app.section.id, payload: payload,
     updated_at: new Date().toISOString(), updated_by: app.profile.id
   });
-  if (error) { toast('Enregistrement impossible : ' + error.message, 'err'); return; }
+  if (error) { toast('Enregistrement impossible : ' + error.message, 'err'); return false; }
   app.hasDraft = true;
   await logActivity('save_draft', 'page_section', app.section.id);
-  toast('Brouillon enregistré', 'ok');
+  if (!(opts && opts.silent)) toast('Brouillon enregistré', 'ok');
   renderEditor();
   const dot = document.querySelector('.tree-item.is-active .dot');
   if (dot) dot.className = 'dot is-draft';
+  return true;
 }
 
 async function publishSection() {
   if (!app.section) return;
   if (!confirmAction('Publier cette section ? Elle sera immédiatement visible sur le site public.')) return;
-  await saveDraft();
+  if (!(await saveDraft({ silent: true }))) return;
   const { error } = await sb.rpc('publish_section', { p_section_id: app.section.id });
   if (error) { toast('Publication impossible : ' + error.message, 'err'); return; }
-  toast('Contenu publié', 'ok');
+  toast('Contenu publié sur le site', 'ok');
   const dot = document.querySelector('.tree-item.is-active .dot');
   if (dot) dot.className = 'dot';
   openSection(app.section.id);
 }
 
 /* ============================== MÉDIATHÈQUE ============================= */
+
+/* Types réellement acceptés : tout le reste est refusé avant l'envoi. */
+const ACCEPTED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'video/mp4'];
+
+/* Dimensions lues côté navigateur pour alimenter la médiathèque. */
+function readDimensions(file) {
+  return new Promise(function (resolve) {
+    const url = URL.createObjectURL(file);
+    const done = function (w, h, d) { URL.revokeObjectURL(url); resolve({ width: w, height: h, duration_s: d }); };
+    if (file.type.indexOf('video') === 0) {
+      const v = document.createElement('video');
+      v.preload = 'metadata'; v.muted = true;
+      v.onloadedmetadata = function () { done(v.videoWidth, v.videoHeight, Math.round(v.duration) || null); };
+      v.onerror = function () { done(null, null, null); };
+      v.src = url;
+    } else {
+      const i = new Image();
+      i.onload = function () { done(i.naturalWidth, i.naturalHeight, null); };
+      i.onerror = function () { done(null, null, null); };
+      i.src = url;
+    }
+    setTimeout(function () { done(null, null, null); }, 8000);
+  });
+}
+
 async function uploadFile(file) {
   if (!canEdit()) { toast('Votre rôle ne permet pas de téléverser.', 'err'); return null; }
+
+  if (ACCEPTED_MIME.indexOf(file.type) === -1) {
+    toast('Format non pris en charge. Utilisez JPG, PNG, WebP ou MP4.', 'err');
+    return null;
+  }
   if (file.size > 200 * 1024 * 1024) { toast('Fichier trop lourd (200 Mo maximum).', 'err'); return null; }
   if (file.size > 8 * 1024 * 1024 && file.type.indexOf('image') === 0 &&
       !confirmAction('Cette image pèse ' + Math.round(file.size / 1048576) + ' Mo et ralentira le site. Continuer ?')) return null;
+
+  const dim = await readDimensions(file);
+  if (file.type.indexOf('image') === 0 && dim.width && dim.width < 1200 &&
+      !confirmAction('Cette image ne fait que ' + dim.width + ' px de large : elle sera floue en plein écran. Continuer ?')) return null;
 
   const now = new Date();
   const path = 'campaigns/' + now.getFullYear() + '/' + String(now.getMonth() + 1).padStart(2, '0') + '/' +
@@ -685,14 +808,20 @@ async function uploadFile(file) {
   if (error) { toast('Téléversement impossible : ' + error.message, 'err'); return null; }
 
   const { data: pub } = sb.storage.from(NOVRA_MEDIA_BUCKET).getPublicUrl(path);
-  await sb.from('media_library').insert({
+
+  /* L'erreur d'insertion est signalée : sans cela le fichier existerait dans
+     le stockage sans jamais apparaître dans la médiathèque. */
+  const { error: libError } = await sb.from('media_library').insert({
     storage_path: path, public_url: pub.publicUrl, file_name: file.name,
     folder: file.type.indexOf('video') === 0 ? 'videos' : 'campagnes',
-    mime_type: file.type, bytes: file.size, created_by: app.profile.id
+    mime_type: file.type, bytes: file.size, created_by: app.profile.id,
+    width: dim.width, height: dim.height, duration_s: dim.duration_s
   });
+  if (libError) toast('Fichier envoyé, mais absent de la médiathèque : ' + libError.message, 'warn');
+
   await logActivity('upload_media', 'media_library', path, { bytes: file.size });
   toast('Média téléversé', 'ok');
-  return { url: pub.publicUrl, mime: file.type };
+  return { url: pub.publicUrl, mime: file.type, width: dim.width, height: dim.height };
 }
 
 const FOLDERS = [['', 'Tous les médias'], ['produits', 'Produits'], ['campagnes', 'Campagnes'],

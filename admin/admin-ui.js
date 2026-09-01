@@ -22,6 +22,9 @@ const ICO = {
   settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 2.6 7a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 8 2.6h.1A2 2 0 1 1 12 1v.1A1.7 1.7 0 0 0 15 2.6"/>',
   journal: '<path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h4"/>',
   eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  'eye-off': '<path d="M3 3l18 18"/><path d="M10.6 6.2A9.9 9.9 0 0 1 12 6c6 0 10 6 10 6a17 17 0 0 1-3.3 3.9M6.6 6.7A17 17 0 0 0 2 12s4 6 10 6a9.6 9.6 0 0 0 4-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
+  'arrow-up': '<path d="M12 19V5"/><path d="m6 11 6-6 6 6"/>',
+  'arrow-down': '<path d="M12 5v14"/><path d="m6 13 6 6 6-6"/>',
   save: '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/>',
   publish: '<path d="M12 3v14"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
@@ -123,7 +126,8 @@ function field(label, control, hint) {
 function input(id, value, opts) {
   const o = opts || {};
   return '<input class="input" id="' + id + '" type="' + (o.type || 'text') + '" value="' + esc(value) + '"' +
-    (o.placeholder ? ' placeholder="' + esc(o.placeholder) + '"' : '') + '>';
+    (o.placeholder ? ' placeholder="' + esc(o.placeholder) + '"' : '') +
+    (o.disabled ? ' disabled' : '') + '>';
 }
 function select(id, options, current) {
   return '<select class="select" id="' + id + '">' + options.map(function (o) {
@@ -209,7 +213,7 @@ function donut(segments, centerTop, centerSub) {
 function toast(message, kind) {
   const el = document.createElement('div');
   el.className = 'toast' + (kind ? ' is-' + kind : '');
-  el.innerHTML = icon(kind === 'err' ? 'alert' : 'check', 'icon-sm') + '<span>' + esc(message) + '</span>';
+  el.innerHTML = icon(kind === 'err' || kind === 'warn' ? 'alert' : 'check', 'icon-sm') + '<span>' + esc(message) + '</span>';
   document.getElementById('toasts').appendChild(el);
   setTimeout(function () { el.remove(); }, 3400);
 }

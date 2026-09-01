@@ -373,14 +373,27 @@ function initHeroSlideshow() {
       img.src = slide.currentSrc || slide.src;
     });
 
+    /* La durée saisie dans l'admin prime sur la valeur par défaut. */
+    const step = Number(window.SLIDE_DURATION_OVERRIDE) || SLIDE_DURATION;
+
     let index = 0;
-    setInterval(function () {
+    slideshow.dataset.timer = setInterval(function () {
       const previous = index;
       index = (index + 1) % slides.length;
       slides[previous].classList.remove('is-active');
       slides[index].classList.add('is-active');
-    }, SLIDE_DURATION);
+    }, Math.max(2000, step));
   });
+}
+
+/* Rejoue le diaporama après une mise à jour du CMS (durée ou visuels changés). */
+function resetHeroSlideshow() {
+  document.querySelectorAll('.page-hero__slideshow').forEach(function (slideshow) {
+    if (slideshow.dataset.timer) clearInterval(Number(slideshow.dataset.timer));
+    delete slideshow.dataset.timer;
+    delete slideshow.dataset.running;
+  });
+  initHeroSlideshow();
 }
 
 /* ------------------------ Footer accordéon (mobile) ----------------------- */
