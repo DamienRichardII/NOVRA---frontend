@@ -7,6 +7,11 @@
 
 const sb = window.supabase.createClient(NOVRA_SUPABASE_URL, NOVRA_SUPABASE_ANON_KEY);
 
+/* Version affichée en bas du menu. Elle permet de savoir en un coup d'œil si
+   quelqu'un travaille sur une ancienne version restée en cache : c'est la
+   première chose à vérifier quand « ça ne marche pas chez moi ». */
+const NOVRA_ADMIN_VERSION = '20260903a';
+
 const app = {
   profile: null,
   view: 'dashboard',
@@ -151,6 +156,16 @@ async function boot() {
   document.getElementById('login-view').hidden = true;
   document.getElementById('app-view').hidden = false;
   window.scrollTo(0, 0);
+
+  const foot = document.querySelector('.sb-foot');
+  if (foot && !document.getElementById('app-version')) {
+    const v = document.createElement('p');
+    v.id = 'app-version';
+    v.className = 'app-version';
+    v.textContent = 'Version ' + NOVRA_ADMIN_VERSION;
+    v.title = 'Si cette version diffère de celle annoncée, forcez le rechargement de la page.';
+    foot.appendChild(v);
+  }
 
   document.getElementById('me-avatar').textContent = initials(profile.full_name || profile.email);
   document.getElementById('me-name').textContent = profile.full_name || profile.email;

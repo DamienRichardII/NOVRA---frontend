@@ -446,3 +446,6 @@
 
 /* Sur mobile il n'y a pas de survol : les actions restent visibles. */
 @media (hover: none) { .prod-img-acts { opacity: 1; } }
+
+/* Version du back-office, en pied de menu */
+.app-version { margin: 10px 0 0; text-align: center; font-size: 10px; color: var(--text-3); letter-spacing: .04em; }
