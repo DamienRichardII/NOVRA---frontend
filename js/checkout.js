@@ -210,7 +210,7 @@ function clearCheckoutToken() {
 }
 
 function processPayment(cartLines, customer, address, method, promo, token) {
-  return novraFunction('create-checkout-session', {
+  return novraFunction('create-order', {
     method: 'POST',
     body: {
       idempotency_key: token || '',

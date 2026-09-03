@@ -120,26 +120,42 @@ Deno.serve(async (req) => {
      double clic, un rechargement ou une reprise réseau retombent sur la
      même commande et rouvrent la même page de paiement. */
   const idem = input.idempotency_key || null;
-  if (idem) {
-    const { data: existing } = await db.from('orders')
-      .select('id, reference, status, access_token, payments(sumup_checkout_id, status)')
-      .eq('idempotency_key', idem).maybeSingle();
 
-    if (existing) {
-      if (existing.status === 'pending') {
-        const checkoutId = (existing.payments as any[])?.[0]?.sumup_checkout_id;
-        if (checkoutId) {
-          return json({
-            reference: existing.reference,
-            access_token: existing.access_token,
-            checkout_url: 'https://checkout.sumup.com/pay/' + checkoutId,
-            reused: true
-          });
-        }
-      } else {
+  /* Renvoie la commande déjà ouverte pour cette clé, si elle existe et si son
+     checkout est prêt. Le checkout est posé juste après la création : deux
+     requêtes strictement simultanées peuvent arriver avant, d'où les essais. */
+  async function reuseExisting(tries = 1): Promise<Response | null> {
+    for (let i = 0; i < tries; i++) {
+      const { data: existing } = await db.from('orders')
+        .select('id, reference, status, access_token, sumup_checkout_id, payments(hosted_checkout_url)')
+        .eq('idempotency_key', idem).maybeSingle();
+
+      if (!existing) return null;
+
+      if (existing.status !== 'pending') {
         return fail('Cette commande a déjà été traitée. Consultez la page de suivi.', 409, 'ALREADY_PROCESSED');
       }
+
+      /* L'adresse est celle que SumUp a renvoyée, jamais une reconstruction :
+         elle ne se déduit pas de l'identifiant du checkout. */
+      const url = (existing.payments as any[])?.[0]?.hosted_checkout_url;
+      if (url) {
+        return json({
+          reference: existing.reference,
+          access_token: existing.access_token,
+          checkout_id: existing.sumup_checkout_id,
+          checkout_url: url,
+          reused: true
+        });
+      }
+      if (i < tries - 1) await new Promise((r) => setTimeout(r, 900));
     }
+    return fail('Votre commande est en cours d\'ouverture. Patientez quelques secondes puis réessayez.', 409, 'IN_PROGRESS');
+  }
+
+  if (idem) {
+    const reused = await reuseExisting();
+    if (reused) return reused;
   }
 
   /* ------------------- Adresse et mode de réception ---------------------- */
@@ -258,6 +274,14 @@ Deno.serve(async (req) => {
   }).select('id, reference, access_token').single();
 
   if (orderError || !order) {
+    /* 23505 = violation d'unicité. Deux requêtes strictement simultanées ont
+       passé la vérification avant que l'une n'ait inséré : c'est l'index qui
+       a tranché. Le perdant ne renvoie pas une erreur, il rejoint la commande
+       gagnante — c'est exactement ce qu'attend un client qui a double-cliqué. */
+    if (orderError?.code === '23505' && idem) {
+      const reused = await reuseExisting(6);
+      if (reused) return reused;
+    }
     logError('order_insert', orderError);
     return fail('La commande n\'a pas pu être enregistrée.', 500, 'ORDER_INSERT');
   }
@@ -296,14 +320,14 @@ Deno.serve(async (req) => {
       customerEmail: email
     });
 
+    const url = checkout.hosted_checkout_url ?? ('https://checkout.sumup.com/pay/' + checkout.id);
+
     await db.from('payments')
-      .update({ sumup_checkout_id: checkout.id })
+      .update({ sumup_checkout_id: checkout.id, hosted_checkout_url: url })
       .eq('id', payment.id);
     await db.from('orders')
       .update({ sumup_checkout_id: checkout.id })
       .eq('id', order.id);
-
-    const url = checkout.hosted_checkout_url ?? ('https://checkout.sumup.com/pay/' + checkout.id);
 
     return json({
       reference: order.reference,
