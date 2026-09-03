@@ -2,8 +2,11 @@
    NOVRA — Consultation d'une commande par le client
 
    Deux façons d'y accéder, toutes deux sans compte :
-     • ?session=cs_…                      au retour du paiement Stripe
+     • ?ref=NVR-…&t=<jeton>               au retour du paiement SumUp
      • ?reference=NVR-…&email=…           depuis la page de suivi
+
+   Le jeton est tiré de 24 octets aléatoires : il n'est pas devinable et
+   n'ouvre que la commande à laquelle il appartient.
 
    La table orders reste fermée au visiteur anonyme, et c'est voulu. Cette
    fonction ne renvoie que la commande demandée, sans identifiant interne et
@@ -31,7 +34,7 @@ const json = (body: unknown, status = 200) =>
 const SELECT =
   'id, reference, status, fulfilment, subtotal, shipping, discount, total, promo_code, ' +
   'shipping_method, payment_method, carrier, tracking_number, tracking_url, email, address, ' +
-  'created_at, paid_at, shipped_at, ready_at, completed_at, ' +
+  'created_at, paid_at, shipped_at, ready_at, completed_at, payment_failed_at, payment_expired_at, ' +
   'order_items(product_name, color, size, qty, unit_price, line_total)';
 
 function maskEmail(value: string) {
@@ -52,18 +55,20 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
 
   const params = new URL(req.url).searchParams;
-  const sessionId = params.get('session') ?? '';
+  const token = (params.get('t') ?? '').trim();
+  const ref = (params.get('ref') ?? '').trim().toUpperCase();
   const reference = (params.get('reference') ?? '').trim().toUpperCase();
   const email = (params.get('email') ?? '').trim().toLowerCase();
 
   let query = db.from('orders').select(SELECT);
   let fullAddress = false;
 
-  if (sessionId) {
-    /* Un identifiant de session Stripe est long et imprévisible : il fait
-       lui-même office de jeton. */
-    if (!/^cs_[a-zA-Z0-9_]{20,}$/.test(sessionId)) return json({ error: 'Référence de paiement invalide.' }, 400);
-    query = query.eq('stripe_session_id', sessionId);
+  if (token && ref) {
+    /* Retour de paiement : le jeton fait foi. La référence est exigée en
+       plus pour qu'un jeton copié ne serve pas à balayer la table. */
+    if (!/^[a-f0-9]{48}$/.test(token)) return json({ error: 'Jeton de consultation invalide.' }, 400);
+    if (!/^NVR-\d{6}-[A-Z0-9]{4}$/.test(ref)) return json({ error: 'Référence de commande invalide.' }, 400);
+    query = query.eq('access_token', token).eq('reference', ref);
     fullAddress = true;
   } else if (reference && email) {
     if (!/^NVR-\d{6}-[A-Z0-9]{4}$/.test(reference)) {
@@ -99,8 +104,10 @@ Deno.serve(async (req) => {
   return json({
     reference: order.reference,
     status: order.status,
-    paid: !['pending', 'cancelled'].includes(order.status),
+    paid: !['pending', 'cancelled', 'payment_failed', 'payment_expired'].includes(order.status),
     cancelled: order.status === 'cancelled',
+    failed: order.status === 'payment_failed',
+    expired: order.status === 'payment_expired',
     fulfilment: order.fulfilment,
     email: maskEmail(order.email),
     address: trimAddress(order.address, fullAddress),
@@ -120,6 +127,8 @@ Deno.serve(async (req) => {
     shipped_at: order.shipped_at,
     ready_at: order.ready_at,
     completed_at: order.completed_at,
+    payment_failed_at: order.payment_failed_at,
+    payment_expired_at: order.payment_expired_at,
     items: order.order_items,
     events: events ?? []
   });

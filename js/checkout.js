@@ -2,7 +2,7 @@
    NOVRA — Tunnel de commande
 
    Ces montants ne servent qu'à l'affichage. Le prix réellement encaissé est
-   recalculé par la fonction create-checkout-session à partir de la base :
+   recalculé par la fonction create-order à partir de la base :
    modifier ces valeurs dans la console ne change rien au débit.
    ========================================================================= */
 
@@ -185,7 +185,7 @@ function validateForm(form) {
 
 /* ------------------------- Intégration paiement --------------------------- */
 /**
- * Ouvre une session Stripe Checkout et renvoie l'adresse de paiement.
+ * Crée la commande en base et ouvre le paiement SumUp.
  *
  * Le navigateur n'envoie que des références et des quantités : les prix, les
  * stocks et les remises sont recalculés côté serveur à partir de la base.
@@ -229,8 +229,8 @@ function processPayment(cartLines, customer, address, method, promo, token) {
   });
 }
 
-/* La confirmation vit désormais sur confirmation.html : elle est affichée au
-   retour de Stripe, à partir de la commande réellement enregistrée. */
+/* La confirmation vit sur confirmation.html : elle est affichée au retour de
+   SumUp, à partir de la commande réellement enregistrée en base. */
 
 /* --------------------------------- Init ----------------------------------- */
 document.addEventListener('DOMContentLoaded', function () {
@@ -295,11 +295,18 @@ document.addEventListener('DOMContentLoaded', function () {
     submitBtn.textContent = 'Redirection vers le paiement…';
 
     processPayment(lines, customer, address, shippingMethod, Cart.promoCode(), checkoutToken())
-      .then(function (session) {
-        if (!session || !session.url) throw new Error('Paiement indisponible.');
+      .then(function (order) {
+        if (!order || !order.checkout_url) throw new Error('Paiement indisponible.');
+        /* Le jeton de consultation permet de retrouver la commande au retour,
+           même si le navigateur a été fermé entre-temps. */
+        try {
+          localStorage.setItem('novra_last_order', JSON.stringify({
+            reference: order.reference, token: order.access_token
+          }));
+        } catch (e) { /* navigation privée */ }
         /* Le panier n'est vidé qu'au retour d'un paiement confirmé :
            un client qui abandonne retrouve ses articles intacts. */
-        window.location.href = session.url;
+        window.location.href = order.checkout_url;
       })
       .catch(function (e) {
         clearCheckoutToken();   /* la tentative a échoué : on repart sur une neuve */
@@ -309,7 +316,7 @@ document.addEventListener('DOMContentLoaded', function () {
       });
   });
 
-  /* Retour depuis Stripe après un abandon de paiement. */
+  /* Retour depuis SumUp après un abandon de paiement. */
   if (new URLSearchParams(location.search).get('paiement') === 'annule') {
     notify('Paiement annulé. Votre panier a été conservé.', null, true);
     history.replaceState(null, '', location.pathname);

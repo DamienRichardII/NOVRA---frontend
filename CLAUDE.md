@@ -13,7 +13,7 @@ css/   style.css (design system) · responsive.css · animations.css
 js/    products.js (catalogue) · main.js (noyau) · cart.js · marketplace.js · product.js · checkout.js · contact.js · home.js
 js/    cms.js (pont vers Supabase) · supabase-config.js (clé publiable)
 js/    order-view.js (rendu commande partagé) · confirmation.js · suivi.js
-supabase/functions/  create-checkout-session · stripe-webhook · order-status
+supabase/functions/  _shared/sumup.ts · create-order · sumup-webhook · order-status
 admin/ index.html · admin.js (noyau, CMS, médiathèque) · admin-pages.js (écrans) · admin-ui.js (composants)
 assets/       médias originaux fournis par le client — NE PAS modifier, renommer ou supprimer
 assets/web/   versions optimisées pour le web (générées) — utilisées par le site
@@ -26,7 +26,7 @@ Contenus éditoriaux : `pages`, `page_sections`, `section_drafts`, `section_medi
 
 Commerce : `products` (11 produits réels), `product_variants` (88 SKU), `stock_movements`,
 `customers`, `orders`, `order_items`, `promotions`, `order_events`, `email_outbox`,
-`store_settings`.
+`store_settings`, `payments`, `payment_events`.
 
 Fonctions : `is_admin()`, `admin_role_of()`, `can_edit_content()`, `publish_section()`,
 `restore_version()`, `admin_dashboard_stats()`. Toutes en `SECURITY DEFINER`, `EXECUTE` révoqué
@@ -43,8 +43,11 @@ règles RLS : ne jamais placer de `service_role` dans un fichier JavaScript.
 - **Header et footer** : générés par `renderHeader()` / `renderFooter()` dans `js/main.js`. Une seule source, ne pas dupliquer dans les pages.
 - **Cartes produits** : `productCardMarkup()` dans `js/main.js`. Utilisée par l'accueil, la marketplace, la fiche produit et le panier.
 - **Panier** : objet `Cart` dans `js/cart.js`, persistance `localStorage` (clé `novra_cart_v1`).
-- **Paiement** : Stripe Checkout. `processPayment()` dans `js/checkout.js` appelle la fonction `create-checkout-session`, qui recalcule prix, stocks et remises depuis la base. Ne jamais faire confiance à un montant venu du navigateur. Voir `STRIPE.md`.
-- **Clés secrètes** : uniquement dans les secrets Supabase (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SIGNING_SECRET`, `NOVRA_SITE_URL`). Jamais dans un fichier du dépôt.
+- **Paiement** : SumUp Hosted Checkout. `processPayment()` dans `js/checkout.js` appelle `create-order`, qui recalcule prix, stocks et remises depuis la base. Ne jamais faire confiance à un montant venu du navigateur. Voir `SUMUP.md`.
+- **Preuve de paiement** : SumUp ne signe pas ses webhooks. Le corps reçu n'est jamais une preuve : `sumup-webhook` rappelle `GET /v0.1/checkouts/{id}` et c'est cette réponse seule qui décide. Ne jamais raccourcir ce chemin.
+- **Montants** : centimes entiers en base et côté serveur. Conversion en euros décimaux uniquement à la frontière SumUp. Jamais de flottant dans un calcul métier.
+- **Statut « payée »** : posé exclusivement par `apply_payment_result()`. Un administrateur ne peut pas le forcer (déclencheur `orders_guard_paid`).
+- **Clés secrètes** : uniquement dans les secrets Supabase (`SUMUP_API_KEY`, `SUMUP_MERCHANT_CODE`, `SUMUP_WEBHOOK_URL`, `NOVRA_SITE_URL`). Jamais dans un fichier du dépôt.
 - **Suivi des stocks** : `products.track_inventory`. Éteint, la boutique vend sans compter ; allumé depuis l'écran Stocks, une rupture bloque la commande.
 - **Modes de réception** : `orders.fulfilment` vaut `delivery`, `relay` ou `pickup`. Le retrait n'apparaît dans le tunnel que si `store_settings` contient une adresse et une ville.
 - **Cycle de vie** : `pending → paid → preparing → shipped → delivered` en livraison, `→ ready_for_pickup → picked_up` en retrait. Chaque changement écrit une ligne dans `order_events` (page de suivi) et prépare un message dans `email_outbox`.
@@ -65,7 +68,7 @@ règles RLS : ne jamais placer de `service_role` dans un fichier JavaScript.
 - Saisie des stocks réels : les 88 variantes sont à 0 (écran Stocks de l'admin).
 - Mentions légales : éditeur, RCS, TVA, hébergeur, directeur de publication.
 - Domaine réel dans les balises `canonical` et Open Graph (actuellement `https://www.novra.fr/`).
-- Clés Stripe à déposer dans les secrets Supabase (voir `STRIPE.md`). Tant qu'elles manquent, aucun paiement n'aboutit et les écrans Commandes, CRM et Analytics restent vides — c'est normal et assumé.
+- Clés SumUp à déposer dans les secrets Supabase (voir `SUMUP.md`). Tant qu'elles manquent, aucun paiement n'aboutit et les écrans Commandes, CRM et Analytics restent vides — c'est normal et assumé.
 - Coordonnées de la boutique physique (écran Paramètres de l'admin) : sans elles, l'option « Retrait en boutique » reste masquée dans le tunnel.
 - Envoi des e-mails : choisir un prestataire et lire `email_outbox`. Aucun message ne part aujourd'hui.
 - Formulaires contact et newsletter : aucune adresse saisie n'est enregistrée aujourd'hui.
