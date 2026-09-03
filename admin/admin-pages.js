@@ -504,12 +504,30 @@ async function pageProducts() {
       '</section>' + productPanel(0) + '</div>';
 }
 
+/* Fiche produit éditable. Le site public lit désormais les prix et les
+   photos dans la base : ce qui est saisi ici est ce qui sera affiché en
+   boutique, et ce qui sera facturé au client. */
 function productPanel(i) {
   const p = (store.products || [])[i];
   if (!p) return '';
 
-  const gallery = (p.images || []).slice(0, 6).map(function (src) {
-    return '<img class="thumb" src="' + esc(mediaSrc(src)) + '" alt="" style="width:52px;height:52px">';
+  app.productIndex = i;
+  const editable = canEdit();
+  const images = p.images || [];
+
+  const gallery = images.map(function (src, k) {
+    return '<div class="prod-img' + (k === 0 ? ' is-cover' : '') + '" data-img-index="' + k + '">' +
+      '<img src="' + esc(mediaSrc(src)) + '" alt="">' +
+      (k === 0 ? '<b>Vignette</b>' : '') +
+      (editable
+        ? '<span class="prod-img-acts">' +
+            '<button class="btn btn-icon btn-sm" type="button" data-img-act="left"  data-idx="' + k + '" title="Vers la gauche" aria-label="Vers la gauche"' + (k === 0 ? ' disabled' : '') + '>' + icon('arrow-up', 'icon-sm') + '</button>' +
+            '<button class="btn btn-icon btn-sm" type="button" data-img-act="right" data-idx="' + k + '" title="Vers la droite" aria-label="Vers la droite"' + (k === images.length - 1 ? ' disabled' : '') + '>' + icon('arrow-down', 'icon-sm') + '</button>' +
+            '<button class="btn btn-icon btn-sm" type="button" data-img-act="swap"  data-idx="' + k + '" title="Remplacer" aria-label="Remplacer">' + icon('edit', 'icon-sm') + '</button>' +
+            '<button class="btn btn-icon btn-sm" type="button" data-img-act="del"   data-idx="' + k + '" title="Retirer" aria-label="Retirer"' + (images.length < 2 ? ' disabled' : '') + '>' + icon('trash', 'icon-sm') + '</button>' +
+          '</span>'
+        : '') +
+    '</div>';
   }).join('');
 
   const variants = (p.product_variants || []).slice().sort(function (a, b) {
@@ -520,21 +538,53 @@ function productPanel(i) {
   }).join('');
 
   return '<aside class="panel">' +
-    '<div class="panel-head"><h2>' + esc(p.name) + '</h2></div>' +
+    '<div class="panel-head"><h2>' + esc(p.name) + '</h2>' +
+      badge(p.status === 'active' ? 'En ligne' : p.status === 'draft' ? 'Brouillon' : 'Archivé',
+            p.status === 'active' ? 'success' : p.status === 'draft' ? 'warning' : 'info') + '</div>' +
     '<div class="panel-body">' +
-      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">' + gallery + '</div>' +
-      field('Nom', input('p-name', p.name, { disabled: true })) +
-      '<div class="field-row">' + field('Prix', input('p-price', String(p.price), { type: 'number', disabled: true })) +
-        field('Catégorie', input('p-cat', p.category, { disabled: true })) + '</div>' +
-      field('Description', '<textarea class="textarea" id="p-desc" disabled>' + esc(p.description || '') + '</textarea>') +
-      '<p class="dim" style="font-size:11px;margin:-6px 0 16px">Les fiches produits sont encore servies par le fichier ' +
-        'catalogue du site. Modifier un nom ou un prix ici ne changerait pas la boutique : ces champs restent donc en lecture seule ' +
-        'tant que le site public ne lit pas la base.</p>' +
-      '<div class="lbl">Variantes et stock</div>' +
+
+      '<div class="lbl">Photos du produit</div>' +
+      '<p class="dim" style="font-size:11px;margin:-4px 0 8px">La première photo sert de vignette partout sur le site.</p>' +
+      '<div class="prod-gallery">' + gallery + '</div>' +
+      (editable
+        ? '<label class="btn btn-sm btn-block" style="margin-bottom:18px">' + icon('plus', 'icon-sm') + 'Ajouter une photo' +
+          '<input type="file" id="p-add-image" accept="image/png,image/jpeg,image/webp,image/avif" hidden></label>'
+        : '') +
+
+      field('Nom *', input('p-name', p.name, { disabled: !editable })) +
+      '<div class="field-row">' +
+        field('Prix (€) *', input('p-price', String(p.price), { type: 'number', disabled: !editable })) +
+        field('Prix barré', input('p-compare', p.compare_at === null || p.compare_at === undefined ? '' : String(p.compare_at), { type: 'number', disabled: !editable })) +
+      '</div>' +
+      '<div class="field-row">' +
+        field('Catégorie', input('p-cat', p.category, { disabled: !editable })) +
+        field('Statut', select('p-status', [['active', 'En ligne'], ['draft', 'Brouillon'], ['archived', 'Archivé']], p.status)) +
+      '</div>' +
+      field('Description', '<textarea class="textarea" id="p-desc" style="min-height:96px"' + (editable ? '' : ' disabled') + '>' + esc(p.description || '') + '</textarea>') +
+
+      '<p class="dim" style="font-size:11px">Le prix saisi ici est celui qui s\'affiche en boutique <strong>et</strong> celui qui est ' +
+        'encaissé : les deux ne peuvent pas diverger.</p>' +
+
+      '<div class="lbl" style="margin-top:18px">Variantes et stock</div>' +
       '<div class="table-wrap"><table class="table"><thead><tr><th>SKU</th><th>Couleur</th><th>Taille</th><th class="right">Stock</th></tr></thead>' +
       '<tbody>' + variants + '</tbody></table></div>' +
-      '<p class="dim" style="margin-top:12px;font-size:11px">Les quantités se modifient depuis l\'écran Stocks : elles sont bien enregistrées en base.</p>' +
-    '</div></aside>';
+      '<p class="dim" style="margin-top:12px;font-size:11px">Les quantités se modifient depuis l\'écran Stocks.</p>' +
+    '</div>' +
+    (editable
+      ? '<div class="panel-foot"><button class="btn btn-primary btn-block" type="button" id="p-save">' +
+        icon('save', 'icon-sm') + 'Enregistrer la fiche</button></div>'
+      : '<div class="panel-foot"><span class="dim">Votre rôle ne permet pas de modifier les fiches produits.</span></div>') +
+  '</aside>';
+}
+
+/* Enregistre les photos immédiatement : un visuel ajouté ou déplacé doit
+   être visible en boutique sans passer par le bouton d'enregistrement. */
+async function saveProductImages(product, images) {
+  const { error } = await sb.from('products').update({ images: images }).eq('id', product.id);
+  if (error) { toast('Photos non enregistrées : ' + error.message, 'err'); return false; }
+  product.images = images;
+  await logActivity('update_product_images', 'products', product.id, { count: images.length });
+  return true;
 }
 
 function afterProducts() {
@@ -543,7 +593,115 @@ function afterProducts() {
       const panel = document.querySelector('.panel');
       if (panel) panel.outerHTML = productPanel(+tr.dataset.product);
       wirePanel();
+      bindProductPanel();
     });
+  });
+  bindProductPanel();
+}
+
+function bindProductPanel() {
+  const p = (store.products || [])[app.productIndex || 0];
+  if (!p || !canEdit()) return;
+
+  const refresh = function () {
+    const panel = document.querySelector('.panel');
+    if (panel) panel.outerHTML = productPanel(app.productIndex || 0);
+    wirePanel();
+    bindProductPanel();
+  };
+
+  /* ------------------------------ Photos ------------------------------- */
+  document.querySelectorAll('[data-img-act]').forEach(function (b) {
+    b.addEventListener('click', async function (e) {
+      e.stopPropagation();
+      const k = +b.dataset.idx;
+      const act = b.dataset.imgAct;
+      const images = (p.images || []).slice();
+
+      if (act === 'del') {
+        if (images.length < 2) { toast('Un produit doit garder au moins une photo.', 'err'); return; }
+        if (!confirmAction('Retirer cette photo de la fiche produit ?')) return;
+        images.splice(k, 1);
+      } else if (act === 'left' && k > 0) {
+        images.splice(k - 1, 0, images.splice(k, 1)[0]);
+      } else if (act === 'right' && k < images.length - 1) {
+        images.splice(k + 1, 0, images.splice(k, 1)[0]);
+      } else if (act === 'swap') {
+        /* L'index est figé avant l'envoi : changer de produit pendant le
+           téléversement ne doit pas écrire la photo au mauvais endroit. */
+        const target = p;
+        const slot = k;
+        const inp = document.createElement('input');
+        inp.type = 'file';
+        inp.accept = 'image/png,image/jpeg,image/webp,image/avif';
+        inp.onchange = async function () {
+          if (!inp.files.length) return;
+          b.disabled = true;
+          const up = await uploadFile(inp.files[0]);
+          b.disabled = false;
+          if (!up) return;
+          const next = (target.images || []).slice();
+          next[slot] = up.url;
+          if (await saveProductImages(target, next)) { toast('Photo remplacée', 'ok'); refresh(); }
+        };
+        inp.click();
+        return;
+      } else return;
+
+      if (await saveProductImages(p, images)) refresh();
+    });
+  });
+
+  const add = document.getElementById('p-add-image');
+  if (add) add.addEventListener('change', async function () {
+    if (!add.files.length) return;
+    const target = p;
+    const up = await uploadFile(add.files[0]);
+    add.value = '';   /* sinon réimporter le même fichier ne déclenche rien */
+    if (!up) return;
+    const next = (target.images || []).concat([up.url]);
+    if (await saveProductImages(target, next)) { toast('Photo ajoutée', 'ok'); refresh(); }
+  });
+
+  /* ------------------------- Nom, prix, statut -------------------------- */
+  const save = document.getElementById('p-save');
+  if (save) save.addEventListener('click', async function () {
+    const name = document.getElementById('p-name').value.trim();
+    const price = Number(document.getElementById('p-price').value);
+    const compareRaw = document.getElementById('p-compare').value.trim();
+    const compare = compareRaw === '' ? null : Number(compareRaw);
+    const category = document.getElementById('p-cat').value.trim();
+    const status = document.getElementById('p-status').value;
+    const description = document.getElementById('p-desc').value.trim();
+
+    if (!name) { toast('Le nom du produit est obligatoire.', 'err'); return; }
+    if (!Number.isFinite(price) || price <= 0) { toast('Le prix doit être un nombre supérieur à zéro.', 'err'); return; }
+    if (compare !== null && (!Number.isFinite(compare) || compare <= price)) {
+      toast('Le prix barré doit être supérieur au prix de vente.', 'err'); return;
+    }
+    if (!category) { toast('La catégorie est obligatoire.', 'err'); return; }
+
+    /* Un écart important est le plus souvent une faute de frappe : on fait
+       confirmer plutôt que de laisser passer un 4,50 € au lieu de 45 €. */
+    const before = Number(p.price);
+    const ratio = before > 0 ? price / before : 1;
+    if ((ratio > 2 || ratio < 0.5) &&
+        !confirmAction('Le prix passe de ' + money(before) + ' à ' + money(price) +
+                       '. Ce nouveau prix sera affiché en boutique et encaissé. Confirmer ?')) return;
+
+    save.disabled = true;
+    const { error } = await sb.from('products').update({
+      name: name, price: price, compare_at: compare,
+      category: category, status: status, description: description || null
+    }).eq('id', p.id);
+    save.disabled = false;
+
+    if (error) { toast('Enregistrement impossible : ' + error.message, 'err'); return; }
+
+    await logActivity('update_product', 'products', p.id, { price_avant: before, price_apres: price });
+    store.products = null; store.stats = null;
+    toast('Fiche enregistrée. Le site affiche le nouveau prix dans la minute.', 'ok');
+    route();
   });
 }
 

@@ -430,3 +430,19 @@
 .chip[data-order-filter] { cursor: pointer; }
 .chip[data-order-filter] b { font-weight: 700; opacity: .65; margin-left: 2px; }
 .chip[data-order-filter].is-active b { opacity: 1; }
+
+/* Galerie photos d'une fiche produit */
+.prod-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.prod-img { position: relative; aspect-ratio: 3 / 4; border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; background: var(--surface-2); }
+.prod-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.prod-img.is-cover { border-color: var(--text-1); }
+.prod-img b { position: absolute; top: 4px; left: 4px; font-size: 9px; text-transform: uppercase; letter-spacing: .06em;
+  background: var(--text-1); color: var(--surface); padding: 2px 5px; border-radius: 3px; }
+.prod-img-acts { position: absolute; inset: auto 0 0 0; display: flex; justify-content: center; gap: 2px; padding: 4px;
+  background: linear-gradient(transparent, rgba(0,0,0,.72)); opacity: 0; transition: opacity .15s; }
+.prod-img:hover .prod-img-acts, .prod-img:focus-within .prod-img-acts { opacity: 1; }
+.prod-img-acts .btn-icon { width: 24px; height: 24px; padding: 0; background: rgba(255,255,255,.92); border-color: transparent; color: #111; }
+.prod-img-acts .btn-icon:disabled { opacity: .35; }
+
+/* Sur mobile il n'y a pas de survol : les actions restent visibles. */
+@media (hover: none) { .prod-img-acts { opacity: 1; } }

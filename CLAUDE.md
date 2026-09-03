@@ -13,6 +13,7 @@ css/   style.css (design system) · responsive.css · animations.css
 js/    products.js (catalogue) · main.js (noyau) · cart.js · marketplace.js · product.js · checkout.js · contact.js · home.js
 js/    cms.js (pont vers Supabase) · supabase-config.js (clé publiable)
 js/    order-view.js (rendu commande partagé) · confirmation.js · suivi.js
+js/    catalogue.js (prix et photos lus en base, repli sur products.js)
 supabase/functions/  _shared/sumup.ts · create-order · sumup-webhook · order-status
 admin/ index.html · admin.js (noyau, CMS, médiathèque) · admin-pages.js (écrans) · admin-ui.js (composants)
 assets/       médias originaux fournis par le client — NE PAS modifier, renommer ou supprimer
@@ -37,7 +38,9 @@ règles RLS : ne jamais placer de `service_role` dans un fichier JavaScript.
 
 ## Règles projet
 
-- **Catalogue** : le site public lit `js/products.js`. La base contient le même catalogue, importé à l'identique, et c'est elle que lit l'admin. Les deux doivent rester synchronisés tant que le site ne lit pas la base ; c'est pourquoi les champs nom / prix / description sont en lecture seule dans l'admin. Ne jamais écrire un prix ou un nom de produit en dur dans un HTML.
+- **Catalogue** : `js/products.js` porte la structure (couleurs, tailles, textes) et sert de repli hors ligne. Les **prix, photos et statut viennent de la base** via `js/catalogue.js` : une seule source de vérité, celle qui est aussi facturée. Ne jamais écrire un prix ou un nom de produit en dur dans un HTML.
+- **Prix** : modifiables depuis l'écran Produits de l'admin. Un écart de plus du simple au double demande confirmation. Le prix affiché est celui qui est encaissé — `create-order` relit la même colonne.
+- **Photos produits** : gérées depuis l'écran Produits (ajout, remplacement, ordre, retrait). La première image sert de vignette partout. Chaque changement est enregistré aussitôt, sans passer par le bouton d'enregistrement.
 - **Stocks** : uniquement en base (`product_variants.stock`), modifiables depuis l'écran Stocks de l'admin. Chaque changement écrit une ligne dans `stock_movements`.
 - **Aucune donnée inventée** dans l'admin : si une table est vide, l'écran affiche un état vide qui explique ce qui manque, jamais des chiffres de démonstration.
 - **Header et footer** : générés par `renderHeader()` / `renderFooter()` dans `js/main.js`. Une seule source, ne pas dupliquer dans les pages.
@@ -64,7 +67,7 @@ règles RLS : ne jamais placer de `service_role` dans un fichier JavaScript.
 
 ## Points à compléter avant mise en ligne
 
-- Prix réels (actuellement provisoires, 35 à 120 €) — à corriger dans `js/products.js` **et** dans la table `products`.
+- Prix réels (actuellement provisoires, 35 à 120 €) — à corriger depuis l'écran Produits de l'admin. Mettre aussi `js/products.js` à jour de temps en temps : il sert de repli si Supabase est injoignable.
 - Saisie des stocks réels : les 88 variantes sont à 0 (écran Stocks de l'admin).
 - Mentions légales : éditeur, RCS, TVA, hébergeur, directeur de publication.
 - Domaine réel dans les balises `canonical` et Open Graph (actuellement `https://www.novra.fr/`).

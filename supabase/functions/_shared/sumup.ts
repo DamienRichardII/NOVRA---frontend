@@ -120,7 +120,6 @@ export async function createCheckout(input: {
       currency: input.currency ?? 'EUR',
       merchant_code: merchant,
       description: input.description.slice(0, 100),
-      pay_to_email: undefined,
       return_url: input.returnUrl,
       redirect_url: input.redirectUrl,
       hosted_checkout: { enabled: true }

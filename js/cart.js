@@ -332,6 +332,13 @@ function initCartPage() {
   }
 }
 
+/* Les totaux se recalculent si un prix a changé pendant la visite. */
+if (typeof onCatalogueUpdate === 'function') onCatalogueUpdate(function () {
+  if (document.getElementById('cart-page-lines')) renderCartPage();
+  renderCartDrawer();
+  if (typeof renderCheckoutSummary === 'function') renderCheckoutSummary();
+});
+
 document.addEventListener('cart:change', function () {
   updateCartCount();
   renderCartDrawer();

@@ -120,6 +120,11 @@ function resetFilters() {
 }
 
 /* ------------------------------- Init ------------------------------------ */
+/* Un prix ou une photo corrigés dans l'admin se répercutent aussitôt. */
+if (typeof onCatalogueUpdate === 'function') onCatalogueUpdate(function () {
+  if (document.getElementById('shop-grid')) renderGrid();
+});
+
 document.addEventListener('DOMContentLoaded', function () {
   const params = new URLSearchParams(window.location.search);
   if (params.get('category')) state.category = params.get('category');

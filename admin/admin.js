@@ -19,7 +19,8 @@ const app = {
   libSelected: null,
   orderFilter: '',   // filtre actif de l'écran Commandes
   orderList: [],     // commandes affichées après filtrage
-  orderIndex: 0      // commande ouverte dans le panneau latéral
+  orderIndex: 0,     // commande ouverte dans le panneau latéral
+  productIndex: 0    // produit ouvert dans le panneau latéral
 };
 
 /* ------------------------------ Navigation ------------------------------ */
@@ -61,7 +62,7 @@ const PAGES = {
 
 const ROLE_VIEWS = {
   super_admin: null,
-  manager: ['dashboard','commandes','produits','collections','stocks','promotions','clients','contenus','mediatheque','analytics','journal'],
+  manager: ['dashboard','commandes','produits','collections','stocks','promotions','clients','contenus','mediatheque','analytics','journal','parametres'],
   marketing: ['dashboard','contenus','mediatheque','promotions','newsletter','analytics'],
   support: ['dashboard','clients','commandes','avis','sav']
 };

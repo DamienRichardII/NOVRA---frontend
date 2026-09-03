@@ -125,6 +125,18 @@ function renderNotFound(root) {
     '<a class="btn" href="marketplace.html">Retour à la boutique</a></div>';
 }
 
+/* Le prix affiché doit être celui qui sera facturé : on redessine la fiche
+   dès que la base a répondu. */
+if (typeof onCatalogueUpdate === 'function') onCatalogueUpdate(function () {
+  const root = document.getElementById('pdp-root');
+  if (!root || !pdp.product) return;
+  const fresh = getProductById(pdp.product.id);
+  if (!fresh) return;
+  pdp.product = fresh;
+  root.innerHTML = pdpMarkup(fresh);
+  initAccordions();
+});
+
 document.addEventListener('DOMContentLoaded', function () {
   const root = document.getElementById('pdp-root');
   const params = new URLSearchParams(window.location.search);
