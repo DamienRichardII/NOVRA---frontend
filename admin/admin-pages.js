@@ -594,6 +594,10 @@ function afterProducts() {
       if (panel) panel.outerHTML = productPanel(+tr.dataset.product);
       wirePanel();
       bindProductPanel();
+      /* Le remplacement du panneau ci-dessus crée un nouvel élément, qui perd
+         la classe d'ouverture posée par wirePanel() sur téléphone : sans cette
+         ligne, la fiche produit s'ouvre puis se referme aussitôt sur mobile. */
+      openPanel(true);
     });
   });
   bindProductPanel();
