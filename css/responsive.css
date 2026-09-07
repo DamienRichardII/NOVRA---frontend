@@ -89,31 +89,52 @@
   .section-sm { padding: 48px 0; }
 
   /* --- Hero mobile ---------------------------------------------------
-     La vidéo est horizontale (1280x732). En `cover` sur un écran vertical,
-     seuls ~27 % de sa largeur restaient visibles et le logo NOVRA animé
-     était tronqué. On passe donc en `contain` : la vidéo entière est
-     affichée, remontée dans le haut du hero, et les zones libres se
-     fondent dans le fond noir du hero.                                  */
-  /* Le header est en position fixed : le hero doit occuper toute la hauteur
-     visible. `svh` correspond au plus petit viewport (barres affichées) et
-     laissait apparaître la section suivante dès que les barres se rétractent.
-     `dvh` suit la hauteur réellement visible ; vh et svh servent de repli. */
+     Un hero plein écran (100dvh) avec une vidéo horizontale (1280x732)
+     posée en `contain` dans un cadre vertical laisse mécaniquement une
+     bande noire au-dessus ET en dessous de la vidéo — agrandir la vidéo
+     pour combler l'un des deux vides fait grandir l'autre d'autant ; les
+     deux ne peuvent pas être petits ensemble sans zoomer la vidéo au
+     point de ne plus rien reconnaître à l'écran (testé).
+
+     Le hero ne fait donc plus une hauteur forcée : il s'arrête à la
+     hauteur de son propre contenu (vidéo + boutons), comme n'importe
+     quelle section. `.hero-media` prend exactement le ratio de la
+     vidéo (1280/732) — aucune bande noire, aucun rognage. Le header,
+     fixe et transparent, se pose directement sur son bord supérieur ;
+     les boutons suivent immédiatement en dessous.
+
+     C'était `min-height:100dvh` qui évitait qu'un bout de la section
+     suivante n'apparaisse sous un header fixe : cette hauteur dynamique
+     (contrairement à `vh`) suit déjà le viewport réel, mais un hero à
+     hauteur de contenu n'a de toute façon plus ce problème — il n'y a
+     simplement plus de zone vide à combler avant la section suivante. */
   .hero {
-    min-height: 100vh;
-    min-height: 100svh;
-    min-height: 100dvh;
+    display: block;
+    min-height: 0;
     background: var(--black);
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
+    overflow: visible;
+  }
+  .hero-media {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    aspect-ratio: 1280 / 732;
+    background: var(--black);
+    overflow: hidden;
   }
   .hero-media video, .hero-media img {
-    object-fit: contain;
-    object-position: center 32%;
+    object-fit: cover;
+    object-position: center center;
     transform: none;
   }
-  /* Fond noir de part et d'autre : dégradé réduit au strict nécessaire */
+  /* Le dégradé ne couvre plus que la vidéo (même ratio qu'elle, ancré en
+     haut du hero) : au-delà, les boutons ne sont plus sur la vidéo, un
+     assombrissement n'y a plus de raison d'être. */
   .hero-overlay {
-    background: linear-gradient(to bottom, rgba(10,10,10,.55) 0%, rgba(10,10,10,0) 18%, rgba(10,10,10,0) 62%, rgba(10,10,10,.6) 100%);
+    position: absolute;
+    inset: 0 0 auto 0;
+    aspect-ratio: 1280 / 732;
+    background: linear-gradient(to bottom, rgba(10,10,10,.5) 0%, rgba(10,10,10,0) 30%, rgba(10,10,10,0) 78%, rgba(10,10,10,.55) 100%);
   }
 
   /* Logo superposé masqué sur mobile : la vidéo affiche déjà le logo animé
@@ -123,7 +144,7 @@
   .hero-main-logo { display: none; }
 
   .hero-inner {
-    padding-bottom: calc(88px + env(safe-area-inset-bottom));
+    padding: 22px var(--gutter) calc(30px + env(safe-area-inset-bottom));
     text-align: center;
   }
   .hero-actions { justify-content: center; margin-top: 0; }
@@ -356,7 +377,7 @@
 @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
   .hero-media video, .hero-media img {
     object-fit: contain;
-    object-position: center 32%;
+    object-position: center 55%;
   }
   .hero-overlay {
     background: linear-gradient(to bottom, rgba(10,10,10,.55) 0%, rgba(10,10,10,0) 20%, rgba(10,10,10,0) 60%, rgba(10,10,10,.62) 100%);
