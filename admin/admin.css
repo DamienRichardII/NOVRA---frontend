@@ -449,3 +449,14 @@
 
 /* Version du back-office, en pied de menu */
 .app-version { margin: 10px 0 0; text-align: center; font-size: 10px; color: var(--text-3); letter-spacing: .04em; }
+
+/* Sélection multiple couleurs / tailles à la création d'un produit */
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.chip-row .chip { cursor: pointer; font: inherit; }
+.chip-dot { width: 11px; height: 11px; border-radius: 50%; border: 1px solid var(--border-2); flex: none; }
+
+/* Miniatures des photos ajoutées avant création du produit */
+.np-photo { position: relative; aspect-ratio: 3 / 4; border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; background: var(--surface-2); }
+.np-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.np-photo button { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; padding: 0;
+  background: rgba(255,255,255,.92); border: 0; border-radius: 50%; color: #111; line-height: 1; cursor: pointer; }

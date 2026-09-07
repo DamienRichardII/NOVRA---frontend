@@ -43,6 +43,39 @@ function catalogueWriteCache(rows) {
   } catch (e) { /* stockage indisponible */ }
 }
 
+/* Construit un produit entièrement à partir d'une ligne de la base, pour un
+   slug qui n'existe pas dans js/products.js : c'est le cas d'un produit créé
+   depuis l'admin, jamais ajouté au fichier statique. La forme de l'objet
+   reproduit exactement celle utilisée dans js/products.js, pour que les
+   mêmes fonctions (cartes produit, fiche produit, panier) le lisent sans
+   distinction. */
+function catalogueBuildProduct(row) {
+  const cat = (typeof CATEGORIES !== 'undefined' ? CATEGORIES : []).find(function (c) { return c.key === row.category; });
+  const details = row.details || {};
+  return {
+    id: row.slug,
+    name: row.name,
+    slug: row.slug,
+    category: row.category,
+    categoryLabel: cat ? cat.label : row.category,
+    gender: row.gender || 'unisexe',
+    price: Number(row.price) || 0,
+    description: row.description || '',
+    images: row.images.slice(),
+    colors: row.colors.slice(),
+    sizes: row.sizes.slice(),
+    featured: !!row.featured,
+    newProduct: true,
+    stock: true,
+    rating: 0,
+    reviews: 0,
+    technicalDetails: Array.isArray(details.technicalDetails) ? details.technicalDetails : [],
+    composition: details.composition || '',
+    care: details.care || '',
+    available: row.status === 'active'
+  };
+}
+
 /* Applique les valeurs de la base sur le catalogue en mémoire.
    Renvoie true si quelque chose a réellement changé à l'écran. */
 function catalogueApply(rows) {
@@ -51,7 +84,19 @@ function catalogueApply(rows) {
 
   rows.forEach(function (row) {
     const p = products.find(function (x) { return x.id === row.slug; });
-    if (!p) return;
+
+    if (!p) {
+      /* Un brouillon, ou une fiche sans photo/couleur/taille encore
+         complète, ne doit jamais apparaître publiquement : on attend
+         qu'elle soit prête plutôt que d'afficher une carte cassée. */
+      if (row.status !== 'active') return;
+      if (!Array.isArray(row.images) || !row.images.length) return;
+      if (!Array.isArray(row.colors) || !row.colors.length) return;
+      if (!Array.isArray(row.sizes) || !row.sizes.length) return;
+      products.push(catalogueBuildProduct(row));
+      changed = true;
+      return;
+    }
 
     const price = Number(row.price);
     if (Number.isFinite(price) && price > 0 && p.price !== price) {
@@ -78,7 +123,7 @@ function catalogueApply(rows) {
 }
 
 function catalogueRefresh() {
-  return novraRest('products?select=slug,price,images,status&order=sort_order')
+  return novraRest('products?select=slug,name,category,gender,price,images,colors,sizes,details,featured,status&order=sort_order')
     .then(function (rows) {
       catalogueWriteCache(rows);
       if (catalogueApply(rows)) {

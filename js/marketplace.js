@@ -46,6 +46,7 @@ function matchesQuery(p) {
 
 function filteredProducts() {
   const list = products.filter(function (p) {
+    if (p.available === false) return false;
     if (state.category !== 'all' && p.category !== state.category) return false;
     if (!matchesGender(p)) return false;
     if (state.sizes.length && !state.sizes.some(function (s) { return p.sizes.indexOf(s) !== -1; })) return false;

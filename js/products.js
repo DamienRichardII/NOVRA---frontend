@@ -458,20 +458,20 @@ function getProductById(id) {
 }
 
 function getFeaturedProducts(limit) {
-  const list = products.filter(function (p) { return p.featured; });
+  const list = products.filter(function (p) { return p.featured && p.available !== false; });
   return typeof limit === 'number' ? list.slice(0, limit) : list;
 }
 
 function getRelatedProducts(product, limit) {
   if (!product) return [];
   const same = products.filter(function (p) {
-    return p.id !== product.id && p.category === product.category;
+    return p.id !== product.id && p.category === product.category && p.available !== false;
   });
   const sameGender = products.filter(function (p) {
-    return p.id !== product.id && p.category !== product.category && p.gender === product.gender;
+    return p.id !== product.id && p.category !== product.category && p.gender === product.gender && p.available !== false;
   });
   const rest = products.filter(function (p) {
-    return p.id !== product.id && same.indexOf(p) === -1 && sameGender.indexOf(p) === -1;
+    return p.id !== product.id && p.available !== false && same.indexOf(p) === -1 && sameGender.indexOf(p) === -1;
   });
   return same.concat(sameGender, rest).slice(0, limit || 4);
 }

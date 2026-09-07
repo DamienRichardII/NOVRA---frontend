@@ -472,9 +472,10 @@ async function pageProducts() {
       emptyBlock('Catalogue vide', 'Aucun produit en base de données.') + '</section>';
   }
 
+  const selected = Math.min(app.productIndex || 0, prods.length - 1);
   const rows = prods.map(function (p, i) {
     const stock = productStock(p);
-    return '<tr data-product="' + i + '"' + (i === 0 ? ' class="is-selected"' : '') + '>' +
+    return '<tr data-product="' + i + '"' + (i === selected ? ' class="is-selected"' : '') + '>' +
       '<td class="c-main"><div class="cell-main">' + (firstImage(p) ? '<img class="thumb" src="' + esc(firstImage(p)) + '" alt="">' : '') +
         '<div><div class="t-title">' + esc(p.name) + '</div><div class="t-sub">' + esc(p.slug) + '</div></div></div></td>' +
       '<td data-l="Catégorie">' + esc(p.category) + '</td>' +
@@ -501,7 +502,229 @@ async function pageProducts() {
         '<div class="table-wrap"><table class="table"><thead><tr><th>Produit</th><th>Catégorie</th><th>Genre</th>' +
         '<th class="right">Prix</th><th class="right">Variantes</th><th class="right">Stock</th><th>Statut</th></tr></thead>' +
         '<tbody>' + rows + '</tbody></table></div>' +
-      '</section>' + productPanel(0) + '</div>';
+      '</section>' + productPanel(selected) + '</div>';
+}
+
+/* Listes de référence pour la création d'un produit. Dupliquées ici plutôt
+   qu'importées de js/products.js : l'admin ne charge pas les scripts du site
+   public. Toute modification ici doit rester cohérente avec les CATEGORIES,
+   GENDERS et COLOR_SWATCHES de js/products.js et js/marketplace.js, sans
+   quoi les filtres du site n'afficheraient pas correctement le nouveau
+   produit. */
+const PRODUCT_CATEGORIES = [
+  ['t-shirts', 'T-shirts'], ['polos', 'Polos'], ['ensembles', 'Ensembles'],
+  ['pantalons', 'Pantalons'], ['vestes', 'Vestes'], ['accessoires', 'Accessoires']
+];
+const PRODUCT_GENDERS = [['homme', 'Homme'], ['femme', 'Femme'], ['unisexe', 'Unisexe']];
+const PRODUCT_COLOR_HEX = {
+  'Noir': '#111111', 'Blanc': '#f2f2f2', 'Gris': '#8a8d90', 'Anthracite': '#33363a',
+  'Beige': '#e4dfcd', 'Kaki': '#5a6046', 'Orange': '#e8481c', 'Menthe': '#57e0c0',
+  'Corail': '#ff5a5f', 'Rose': '#c9a1a6'
+};
+const PRODUCT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+
+/* Un slug lisible et unique : nécessaire pour retrouver le produit depuis
+   le site (catalogue.js) et depuis le tunnel de commande (create-order). */
+const DIACRITICS_RE = new RegExp('[̀-ͯ]', 'g');
+function slugify(text) {
+  return String(text || '')
+    .normalize('NFD').replace(DIACRITICS_RE, '')
+    .toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+function uniqueSlug(base, existing) {
+  let slug = base || 'produit';
+  let n = 2;
+  while (existing.indexOf(slug) !== -1) { slug = base + '-' + n; n++; }
+  return slug;
+}
+
+/* Panneau de création : mêmes composants que la fiche produit, mais un
+   formulaire vierge. Les couleurs et tailles se choisissent par puces
+   (au moins une de chaque) plutôt que du texte libre, pour garantir que
+   la pastille de couleur et les filtres du site fonctionnent. */
+function productCreatePanel() {
+  const colorChips = Object.keys(PRODUCT_COLOR_HEX).map(function (c) {
+    return '<button type="button" class="chip" data-color-pick="' + esc(c) + '">' +
+      '<span class="chip-dot" style="background:' + PRODUCT_COLOR_HEX[c] + '"></span>' + esc(c) + '</button>';
+  }).join('');
+
+  const sizeChips = PRODUCT_SIZES.map(function (s) {
+    return '<button type="button" class="chip" data-size-pick="' + esc(s) + '">' + esc(s) + '</button>';
+  }).join('') + '<button type="button" class="chip" data-size-pick="TU">Taille unique</button>';
+
+  return '<aside class="panel">' +
+    '<div class="panel-head"><h2>Nouveau produit</h2></div>' +
+    '<div class="panel-body">' +
+
+      field('Nom du produit *', input('np-name', '', { placeholder: 'Ex. Veste Coupe-Vent Bleue' })) +
+      '<div class="field-row">' +
+        field('Catégorie *', select('np-cat', PRODUCT_CATEGORIES, PRODUCT_CATEGORIES[0][0])) +
+        field('Genre *', select('np-gender', PRODUCT_GENDERS, 'homme')) +
+      '</div>' +
+      '<div class="field-row">' +
+        field('Prix (€) *', input('np-price', '', { type: 'number', placeholder: '0.00' })) +
+        field('Prix barré', input('np-compare', '', { type: 'number', placeholder: 'Facultatif' })) +
+      '</div>' +
+      field('Description', '<textarea class="textarea" id="np-desc" style="min-height:80px"></textarea>') +
+
+      '<div class="lbl" style="margin-top:4px">Couleurs disponibles *</div>' +
+      '<p class="dim" style="font-size:11px;margin:-4px 0 8px">Au moins une couleur.</p>' +
+      '<div class="chip-row" id="np-colors">' + colorChips + '</div>' +
+
+      '<div class="lbl">Tailles disponibles *</div>' +
+      '<p class="dim" style="font-size:11px;margin:-4px 0 8px">« Taille unique » ne se combine pas avec les autres tailles.</p>' +
+      '<div class="chip-row" id="np-sizes">' + sizeChips + '</div>' +
+
+      '<div class="lbl">Photos du produit *</div>' +
+      '<p class="dim" style="font-size:11px;margin:-4px 0 8px">La première photo sert de vignette partout sur le site.</p>' +
+      '<div class="prod-gallery" id="np-photos"></div>' +
+      '<label class="btn btn-sm btn-block" style="margin-bottom:18px">' + icon('plus', 'icon-sm') + 'Ajouter des photos' +
+        '<input type="file" id="np-add-photos" accept="image/png,image/jpeg,image/webp,image/avif" multiple hidden></label>' +
+
+      '<div class="lbl">Détails techniques</div>' +
+      '<p class="dim" style="font-size:11px;margin:-4px 0 8px">Facultatif, une caractéristique par ligne.</p>' +
+      '<textarea class="textarea" id="np-details" style="min-height:70px;margin-bottom:14px" placeholder="Maille technique à séchage rapide' +
+        '\nCoutures plates anti-frottement"></textarea>' +
+
+      '<div class="field-row">' +
+        field('Composition', input('np-comp', '', { placeholder: 'Facultatif' })) +
+        field('Entretien', input('np-care', '', { placeholder: 'Facultatif' })) +
+      '</div>' +
+
+      field('Statut', select('np-status', [['draft', 'Brouillon (invisible sur le site)'], ['active', 'En ligne (visible immédiatement)']], 'draft')) +
+      '<p class="dim" style="font-size:11px">Le prix et les photos saisis ici sont ceux qui seront affichés et ' +
+        'facturés dès la mise en ligne. Les tailles et couleurs choisies créent chacune une référence de stock à 0, ' +
+        'à compléter ensuite depuis l\'écran Stocks.</p>' +
+
+    '</div>' +
+    '<div class="panel-foot"><button class="btn btn-primary btn-block" type="button" id="np-save">' +
+      icon('save', 'icon-sm') + 'Créer le produit</button></div>' +
+  '</aside>';
+}
+
+/* Ouvre le panneau de création depuis le bouton d'en-tête. Remplace le même
+   noeud .panel que l'édition : sur téléphone, il faut donc rouvrir le tiroir
+   explicitement après coup (voir la note dans afterProducts). */
+function openProductCreate() {
+  if (!canEdit()) { toast('Votre rôle ne permet pas de créer un produit.', 'err'); return; }
+  const panel = document.querySelector('.panel');
+  if (panel) panel.outerHTML = productCreatePanel();
+  else document.getElementById('admin-content').insertAdjacentHTML('beforeend', productCreatePanel());
+  wirePanel();
+  bindProductCreatePanel();
+  openPanel(true);
+}
+
+function bindProductCreatePanel() {
+  const photos = [];   // { url }
+
+  function renderPhotos() {
+    const box = document.getElementById('np-photos');
+    if (!box) return;
+    box.innerHTML = photos.map(function (ph, k) {
+      return '<div class="np-photo">' +
+        '<img src="' + esc(mediaSrc(ph.url)) + '" alt="">' +
+        '<button type="button" data-remove-photo="' + k + '" aria-label="Retirer">' + icon('close', 'icon-sm') + '</button>' +
+      '</div>';
+    }).join('');
+    box.querySelectorAll('[data-remove-photo]').forEach(function (b) {
+      b.addEventListener('click', function () { photos.splice(+b.dataset.removePhoto, 1); renderPhotos(); });
+    });
+  }
+
+  document.querySelectorAll('#np-colors [data-color-pick]').forEach(function (b) {
+    b.addEventListener('click', function () { b.classList.toggle('is-active'); });
+  });
+  document.querySelectorAll('#np-sizes [data-size-pick]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      const isTU = b.dataset.sizePick === 'TU';
+      const all = document.querySelectorAll('#np-sizes [data-size-pick]');
+      if (isTU) {
+        all.forEach(function (x) { if (x !== b) x.classList.remove('is-active'); });
+      } else {
+        document.querySelector('#np-sizes [data-size-pick="TU"]').classList.remove('is-active');
+      }
+      b.classList.toggle('is-active');
+    });
+  });
+
+  const addPhotos = document.getElementById('np-add-photos');
+  if (addPhotos) addPhotos.addEventListener('change', async function () {
+    const files = Array.prototype.slice.call(addPhotos.files);
+    addPhotos.value = '';
+    for (const f of files) {
+      const up = await uploadFile(f);
+      if (up) photos.push({ url: up.url });
+    }
+    renderPhotos();
+  });
+
+  const save = document.getElementById('np-save');
+  if (save) save.addEventListener('click', async function () {
+    const name = document.getElementById('np-name').value.trim();
+    const category = document.getElementById('np-cat').value;
+    const gender = document.getElementById('np-gender').value;
+    const price = Number(document.getElementById('np-price').value);
+    const compareRaw = document.getElementById('np-compare').value.trim();
+    const compare = compareRaw === '' ? null : Number(compareRaw);
+    const description = document.getElementById('np-desc').value.trim();
+    const details = document.getElementById('np-details').value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+    const composition = document.getElementById('np-comp').value.trim();
+    const care = document.getElementById('np-care').value.trim();
+    const status = document.getElementById('np-status').value;
+
+    const colors = Array.prototype.slice.call(document.querySelectorAll('#np-colors .is-active'))
+      .map(function (b) { return b.dataset.colorPick; });
+    const sizes = Array.prototype.slice.call(document.querySelectorAll('#np-sizes .is-active'))
+      .map(function (b) { return b.dataset.sizePick; });
+
+    if (!name) { toast('Le nom du produit est obligatoire.', 'err'); return; }
+    if (!Number.isFinite(price) || price <= 0) { toast('Le prix doit être un nombre supérieur à zéro.', 'err'); return; }
+    if (compare !== null && (!Number.isFinite(compare) || compare <= price)) {
+      toast('Le prix barré doit être supérieur au prix de vente.', 'err'); return;
+    }
+    if (!colors.length) { toast('Choisissez au moins une couleur.', 'err'); return; }
+    if (!sizes.length) { toast('Choisissez au moins une taille.', 'err'); return; }
+    if (!photos.length) { toast('Ajoutez au moins une photo.', 'err'); return; }
+
+    const prods = await loadProducts();
+    const slug = uniqueSlug(slugify(name), prods.map(function (p) { return p.slug; }));
+    const sortOrder = prods.reduce(function (m, p) { return Math.max(m, p.sort_order || 0); }, 0) + 1;
+
+    save.disabled = true;
+    const { data: created, error } = await sb.from('products').insert({
+      slug: slug, name: name, category: category, gender: gender,
+      price: price, compare_at: compare, description: description || null,
+      images: photos.map(function (p) { return p.url; }),
+      colors: colors, sizes: sizes,
+      details: { technicalDetails: details, composition: composition || null, care: care || null },
+      status: status, sort_order: sortOrder
+    }).select().single();
+
+    if (error) { save.disabled = false; toast('Création impossible : ' + error.message, 'err'); return; }
+
+    const variantRows = [];
+    colors.forEach(function (c) {
+      sizes.forEach(function (s) {
+        variantRows.push({
+          product_id: created.id,
+          sku: slug + '-' + slugify(c) + '-' + slugify(s),
+          color: c, size: s, stock: 0, low_stock_at: 5
+        });
+      });
+    });
+    const { error: vError } = await sb.from('product_variants').insert(variantRows);
+    if (vError) toast('Produit créé, mais les références de stock n\'ont pas pu être générées : ' + vError.message, 'warn');
+
+    await logActivity('create_product', 'products', created.id, { name: name, slug: slug, variantes: variantRows.length });
+    store.products = null; store.stats = null;
+    toast(status === 'active' ? 'Produit créé et déjà visible sur le site.' : 'Produit créé en brouillon.', 'ok');
+
+    app.productIndex = prods.length;   // le nouveau produit sera le dernier de la liste triée par sort_order
+    route();
+  });
 }
 
 /* Fiche produit éditable. Le site public lit désormais les prix et les

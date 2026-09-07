@@ -49,7 +49,7 @@ const NAV = [
 const PAGES = {
   dashboard:      { title: 'Dashboard', sub: "Vue d'ensemble de votre activité", actions: ['theme'] },
   commandes:      { title: 'Commandes', sub: 'Suivi des commandes enregistrées en base.', actions: ['theme'] },
-  produits:       { title: 'Produits', sub: 'Catalogue réel, variantes et stocks.', actions: ['preview', 'theme'] },
+  produits:       { title: 'Produits', sub: 'Catalogue réel, variantes et stocks.', actions: ['preview', 'new_product', 'theme'] },
   collections:    { title: 'Collections', sub: 'Regroupements issus des catégories du catalogue.', actions: ['preview', 'theme'] },
   stocks:         { title: 'Stocks', sub: 'Saisissez les quantités disponibles : chaque modification est enregistrée aussitôt.', actions: ['theme'] },
   promotions:     { title: 'Promotions', sub: 'Codes promo et bons de réduction.', actions: ['theme'] },
@@ -205,7 +205,8 @@ function renderHeaderActions() {
     publish: '<button class="btn btn-primary" type="button" id="hdr-publish">' + icon('publish', 'icon-sm') + '<span>Publier</span></button>',
     save: '<button class="btn btn-primary" type="button" id="hdr-publish">' + icon('check', 'icon-sm') + '<span>Enregistrer</span></button>',
     upload: '<label class="btn btn-primary">' + icon('upload', 'icon-sm') + '<span>Téléverser</span>' +
-      '<input type="file" id="hdr-upload" accept="image/png,image/jpeg,image/webp,image/avif,video/mp4" multiple hidden></label>'
+      '<input type="file" id="hdr-upload" accept="image/png,image/jpeg,image/webp,image/avif,video/mp4" multiple hidden></label>',
+    new_product: '<button class="btn btn-primary" type="button" id="hdr-new-product">' + icon('plus', 'icon-sm') + '<span>Nouveau produit</span></button>'
   };
   document.getElementById('header-actions').innerHTML = cfg.actions.map(function (a) { return parts[a] || ''; }).join('');
 
@@ -223,6 +224,10 @@ function renderHeaderActions() {
   if (up) up.addEventListener('change', async function (e) {
     for (const f of e.target.files) await uploadFile(f);
     e.target.value = ''; loadLibrary();
+  });
+  const npBtn = document.getElementById('hdr-new-product');
+  if (npBtn) npBtn.addEventListener('click', function () {
+    if (typeof openProductCreate === 'function') openProductCreate();
   });
 }
 
