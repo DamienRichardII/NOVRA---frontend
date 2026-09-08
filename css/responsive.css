@@ -150,8 +150,8 @@
   .hero-actions { justify-content: center; margin-top: 0; }
   .hero-actions .btn { flex: 1; min-width: 0; }
 
-  .brand { padding: 8px 13px; }
-  .brand img { height: 14px; }
+  .brand { padding: 7px 11px; }
+  .brand img { height: 11px; }
 
   /* Héros internes — mobile : cadrage propre au sujet, pas de reprise du desktop */
   .page-hero { min-height: clamp(420px, 118vw, 560px); }
