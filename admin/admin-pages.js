@@ -794,8 +794,15 @@ function productPanel(i) {
       '<p class="dim" style="margin-top:12px;font-size:11px">Les quantités se modifient depuis l\'écran Stocks.</p>' +
     '</div>' +
     (editable
-      ? '<div class="panel-foot"><button class="btn btn-primary btn-block" type="button" id="p-save">' +
-        icon('save', 'icon-sm') + 'Enregistrer la fiche</button></div>'
+      ? '<div class="panel-foot">' +
+          '<button class="btn btn-primary btn-block" type="button" id="p-save">' +
+            icon('save', 'icon-sm') + 'Enregistrer la fiche</button>' +
+          (p.status !== 'archived'
+            ? '<button class="btn btn-danger" type="button" id="p-delete">' +
+                icon('trash', 'icon-sm') + 'Supprimer</button>'
+            : '<button class="btn" type="button" id="p-restore">' +
+                icon('check', 'icon-sm') + 'Restaurer</button>') +
+        '</div>'
       : '<div class="panel-foot"><span class="dim">Votre rôle ne permet pas de modifier les fiches produits.</span></div>') +
   '</aside>';
 }
@@ -928,6 +935,43 @@ function bindProductPanel() {
     await logActivity('update_product', 'products', p.id, { price_avant: before, price_apres: price });
     store.products = null; store.stats = null;
     toast('Fiche enregistrée. Le site affiche le nouveau prix dans la minute.', 'ok');
+    route();
+  });
+
+  /* ------------------------------ Suppression --------------------------- */
+  const del = document.getElementById('p-delete');
+  if (del) del.addEventListener('click', async function () {
+    if (!confirmAction(
+      '« ' + p.name + ' » va disparaître du site immédiatement. La fiche et ses variantes restent ' +
+      'en base : pour la remettre en ligne, repassez son statut à « En ligne » ou utilisez le bouton ' +
+      '« Restaurer ». Confirmer la suppression ?'
+    )) return;
+
+    del.disabled = true;
+    const { error } = await sb.from('products').update({ status: 'archived' }).eq('id', p.id);
+    del.disabled = false;
+
+    if (error) { toast('Suppression impossible : ' + error.message, 'err'); return; }
+
+    await logActivity('archive_product', 'products', p.id, { name: p.name });
+    store.products = null; store.stats = null;
+    toast('Produit supprimé du site. Il reste archivé en base, réversible à tout moment.', 'ok');
+    route();
+  });
+
+  const restore = document.getElementById('p-restore');
+  if (restore) restore.addEventListener('click', async function () {
+    if (!confirmAction('Remettre « ' + p.name + ' » en ligne sur le site ?')) return;
+
+    restore.disabled = true;
+    const { error } = await sb.from('products').update({ status: 'active' }).eq('id', p.id);
+    restore.disabled = false;
+
+    if (error) { toast('Restauration impossible : ' + error.message, 'err'); return; }
+
+    await logActivity('restore_product', 'products', p.id, { name: p.name });
+    store.products = null; store.stats = null;
+    toast('Produit restauré. Il réapparaît sur le site dans la minute.', 'ok');
     route();
   });
 }

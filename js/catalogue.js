@@ -81,8 +81,10 @@ function catalogueBuildProduct(row) {
 function catalogueApply(rows) {
   if (!Array.isArray(rows) || typeof products === 'undefined') return false;
   let changed = false;
+  const seenSlugs = {};
 
   rows.forEach(function (row) {
+    seenSlugs[row.slug] = true;
     const p = products.find(function (x) { return x.id === row.slug; });
 
     if (!p) {
@@ -117,8 +119,21 @@ function catalogueApply(rows) {
     if (p.available !== sold) { p.available = sold; changed = true; }
   });
 
-  /* Les produits absents de la base ne sont pas supprimés : mieux vaut
-     afficher un article de trop qu'une boutique vide sur une erreur. */
+  /* Un produit absent de la réponse n'est plus en vente : la lecture
+     publique ne renvoie déjà que les fiches actives (règle RLS), donc son
+     absence ici — qu'il ait été archivé ou supprimé depuis l'admin — suffit
+     à le faire disparaître du site, sans toucher à sa fiche en mémoire.
+     Une réponse vide n'efface rien : mieux vaut un article de trop qu'une
+     boutique vide sur une erreur réseau ou un bug passager. */
+  if (rows.length) {
+    products.forEach(function (p) {
+      if (!seenSlugs[p.id] && p.available !== false) {
+        p.available = false;
+        changed = true;
+      }
+    });
+  }
+
   return changed;
 }
 
