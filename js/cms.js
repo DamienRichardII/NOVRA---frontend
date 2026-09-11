@@ -61,6 +61,15 @@ function cmsMediaUrl(media) {
   return (cmsIsMobile() && media.mobile_url) ? media.mobile_url : media.desktop_url;
 }
 
+/* Les valeurs injectées ici viennent de l'admin (texte libre saisi par un
+   utilisateur authentifié) : un simple échappement suffit, mais on ne prend
+   pas de risque en écrivant du HTML avec + directement dans le DOM public. */
+function cmsEsc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
 function cmsSetText(root, selector, value) {
   if (value === null || value === undefined || value === '') return;
   const el = root.querySelector(selector);
@@ -150,11 +159,42 @@ function cmsApplySection(section) {
     return;
   }
 
-  /* Image simple ou collection de visuels */
+  /* Galerie libre à nombre de photos variable (ex. la section Communauté de
+     l'accueil) : contrairement aux vignettes ci-dessous, ces photos n'ont
+     pas d'identité propre (pas de lien, pas de titre individuel), donc on
+     régénère entièrement le contenu pour que l'admin puisse en ajouter, en
+     retirer ou les réordonner librement. */
+  const gallery = root.querySelector('.carousel');
+  if (gallery) {
+    const shots = (section.section_media || [])
+      .filter(function (m) { return m.active !== false; })
+      .sort(function (a, b) { return a.sort_order - b.sort_order; });
+    if (shots.length) {
+      gallery.innerHTML = shots.map(function (m) {
+        const alt = m.alt_text ? cmsEsc(m.alt_text) : '';
+        return '<figure><img src="' + cmsEsc(cmsMediaUrl(m)) + '" alt="' + alt +
+               '" width="600" height="800" loading="lazy" style="object-position:' + cmsFocal(m) + '"></figure>';
+      }).join('');
+    }
+    return;
+  }
+
+  /* Image simple, ou vignettes à identité fixe (les cartes Homme / Femme /
+     Accessoires de l'accueil, chacune liée à son propre lien et son propre
+     titre) : la position prime sur le filtre "actif" ci-dessus, pour que
+     masquer une vignette depuis l'admin fasse disparaître LA BONNE carte au
+     lieu de décaler les photos des autres vers la mauvaise étiquette. */
+  const allMedia = (section.section_media || [])
+    .slice().sort(function (a, b) { return a.sort_order - b.sort_order; });
   const images = root.querySelectorAll('.page-hero__image, .split-media img, .collection-card img, .campaign-media img');
-  media.forEach(function (m, i) {
-    const img = images[i];
-    if (!img) return;
+  images.forEach(function (img, i) {
+    const m = allMedia[i];
+    const card = img.closest('.collection-card');
+    if (!m || m.active === false) {
+      if (card) card.hidden = true;
+      return;
+    }
+    if (card) card.hidden = false;
     const url = cmsMediaUrl(m);
     if (url) img.setAttribute('src', url);
     if (m.alt_text !== null && m.alt_text !== undefined) img.setAttribute('alt', m.alt_text);

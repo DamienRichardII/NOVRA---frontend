@@ -287,6 +287,7 @@ async function route() {
   if (view === 'promotions') afterPromotions();
   if (view === 'commandes') afterOrders();
   if (view === 'produits') afterProducts();
+  if (view === 'collections') afterCollections();
   if (view === 'parametres') afterSettings();
 }
 
@@ -527,9 +528,19 @@ function bindSlideshowBar() {
   if (mg) mg.addEventListener('click', function () { document.getElementById('cms-editor').scrollIntoView({ behavior: 'smooth' }); });
 }
 
+/* Les vignettes "collections" de l'accueil (Homme / Femme / Accessoires) ont
+   chacune un lien et un titre fixés dans la page : réordonner ou retirer un
+   média y mélangerait la photo d'une vignette avec l'étiquette d'une autre.
+   Seul Masquer/Afficher y reste proposé ; les diaporamas classiques gardent
+   toutes les actions. */
+function mediaOrderLocked() {
+  return !!(app.section && app.section.section_key === 'collections');
+}
+
 /* Gestion des médias d'un diaporama : ordre, affichage, retrait. */
 function mediaList() {
   const editable = canEdit();
+  const locked = mediaOrderLocked();
   return '<div class="media-list">' + app.media.map(function (m, i) {
     const off = m.active === false;
     const act = function (a, label, disabled) {
@@ -538,12 +549,19 @@ function mediaList() {
     };
     return '<div class="media-row ' + (i === app.slide ? 'is-active' : '') + (off ? ' is-off' : '') + '" data-pick-slide="' + i + '">' +
       '<img src="' + esc(mediaSrc(m.poster_desktop_url || m.desktop_url)) + '" alt="">' +
-      '<span class="grow"><strong>Slide ' + (i + 1) + '</strong><small>' +
+      '<span class="grow"><strong>' + (locked ? esc(m.alt_text || 'Vignette ' + (i + 1)) : 'Slide ' + (i + 1)) + '</strong><small>' +
         (m.media_type === 'video' ? 'Vidéo' : 'Image') + (off ? ' · masqué' : '') + '</small></span>' +
-      (editable ? '<span class="media-row-acts">' + act('up', 'Monter', i === 0) + act('down', 'Descendre', i === app.media.length - 1) +
-        act('off', off ? 'Afficher' : 'Masquer') + act('del', 'Retirer', app.media.length < 2) + '</span>' : '') +
+      (editable ? '<span class="media-row-acts">' +
+        (locked ? '' : act('up', 'Monter', i === 0) + act('down', 'Descendre', i === app.media.length - 1)) +
+        act('off', off ? 'Afficher' : 'Masquer') +
+        (locked ? '' : act('del', 'Retirer', app.media.length < 2)) + '</span>' : '') +
     '</div>';
-  }).join('') + '</div>';
+  }).join('') +
+  (editable && locked
+    ? '<p class="dim" style="font-size:11px;margin-top:8px">Chaque vignette correspond à une collection précise. ' +
+      'Utilisez Masquer / Afficher pour la retirer du site ou la remettre ; Remplacer pour changer sa photo.</p>'
+    : '') +
+  '</div>';
 }
 
 function renderEditor() {
@@ -597,7 +615,7 @@ function renderEditor() {
         (m && m.media_type === 'video' ? mediaSlot('Poster (image d\'attente)', m.poster_desktop_url, m.poster_desktop_url ? 'JPG' : 'Aucun', 'poster') : '') +
         focalPick('Point focal desktop', 'desktop') +
         focalPick('Point focal mobile', 'mobile') +
-        (canEdit() ? '<label class="btn btn-sm btn-block">' + icon('plus', 'icon-sm') + 'Ajouter un média' +
+        (canEdit() && !mediaOrderLocked() ? '<label class="btn btn-sm btn-block">' + icon('plus', 'icon-sm') + 'Ajouter un média' +
           '<input type="file" id="add-media" accept="image/*,video/mp4" hidden></label>' : '') +
       '</div>' +
     '</div>' +
@@ -698,6 +716,10 @@ function bindEditor() {
       const i = +b.dataset.idx;
       const act = b.dataset.mediaAct;
       if (!canEdit() || !app.media[i]) return;
+      if (mediaOrderLocked() && act !== 'off') {
+        toast('Cette vignette est liée à une collection précise : utilisez Masquer / Afficher.', 'err');
+        return;
+      }
 
       if (act === 'del') {
         if (app.media.length < 2) { toast('Une section doit garder au moins un média.', 'err'); return; }

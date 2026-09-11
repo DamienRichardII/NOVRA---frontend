@@ -472,6 +472,7 @@ async function pageProducts() {
       emptyBlock('Catalogue vide', 'Aucun produit en base de données.') + '</section>';
   }
 
+  const editableList = canEdit();
   const selected = Math.min(app.productIndex || 0, prods.length - 1);
   const rows = prods.map(function (p, i) {
     const stock = productStock(p);
@@ -484,7 +485,15 @@ async function pageProducts() {
       '<td data-l="Variantes" class="right">' + (p.product_variants || []).length + '</td>' +
       '<td data-l="Stock" class="right">' + (stock ? stock : badge('À saisir', 'warning')) + '</td>' +
       '<td data-l="Statut">' + badge(p.status === 'active' ? 'Actif' : p.status === 'draft' ? 'Brouillon' : 'Archivé',
-        p.status === 'active' ? 'success' : p.status === 'draft' ? 'warning' : 'info') + '</td></tr>';
+        p.status === 'active' ? 'success' : p.status === 'draft' ? 'warning' : 'info') + '</td>' +
+      (editableList
+        ? '<td data-l="Actions" class="right">' +
+          (p.status !== 'archived'
+            ? '<button class="btn btn-icon btn-sm btn-danger" type="button" data-row-act="del" data-idx="' + i + '" title="Supprimer" aria-label="Supprimer ' + esc(p.name) + '">' + icon('trash', 'icon-sm') + '</button>'
+            : '<button class="btn btn-icon btn-sm" type="button" data-row-act="restore" data-idx="' + i + '" title="Restaurer" aria-label="Restaurer ' + esc(p.name) + '">' + icon('check', 'icon-sm') + '</button>') +
+          '</td>'
+        : '') +
+    '</tr>';
   }).join('');
 
   const active = prods.filter(function (p) { return p.status === 'active'; }).length;
@@ -500,7 +509,8 @@ async function pageProducts() {
       '<section class="card">' +
         cardHead('Catalogue', '<span class="badge-count">' + prods.length + '</span>') +
         '<div class="table-wrap"><table class="table"><thead><tr><th>Produit</th><th>Catégorie</th><th>Genre</th>' +
-        '<th class="right">Prix</th><th class="right">Variantes</th><th class="right">Stock</th><th>Statut</th></tr></thead>' +
+        '<th class="right">Prix</th><th class="right">Variantes</th><th class="right">Stock</th><th>Statut</th>' +
+        (editableList ? '<th class="right">Actions</th>' : '') + '</tr></thead>' +
         '<tbody>' + rows + '</tbody></table></div>' +
       '</section>' + productPanel(selected) + '</div>';
 }
@@ -817,6 +827,43 @@ async function saveProductImages(product, images) {
   return true;
 }
 
+/* Suppression = archivage réversible. Partagée entre le bouton de la fiche
+   produit et l'action rapide sur la ligne du tableau, pour que les deux
+   chemins se comportent exactement de la même façon. */
+async function archiveProduct(p, btn) {
+  if (!confirmAction(
+    '« ' + p.name + ' » va disparaître du site immédiatement. La fiche et ses variantes restent ' +
+    'en base : pour la remettre en ligne, repassez son statut à « En ligne » ou utilisez le bouton ' +
+    '« Restaurer ». Confirmer la suppression ?'
+  )) return false;
+
+  if (btn) btn.disabled = true;
+  const { error } = await sb.from('products').update({ status: 'archived' }).eq('id', p.id);
+  if (btn) btn.disabled = false;
+  if (error) { toast('Suppression impossible : ' + error.message, 'err'); return false; }
+
+  await logActivity('archive_product', 'products', p.id, { name: p.name });
+  store.products = null; store.stats = null;
+  toast('Produit supprimé du site. Il reste archivé en base, réversible à tout moment.', 'ok');
+  route();
+  return true;
+}
+
+async function restoreProduct(p, btn) {
+  if (!confirmAction('Remettre « ' + p.name + ' » en ligne sur le site ?')) return false;
+
+  if (btn) btn.disabled = true;
+  const { error } = await sb.from('products').update({ status: 'active' }).eq('id', p.id);
+  if (btn) btn.disabled = false;
+  if (error) { toast('Restauration impossible : ' + error.message, 'err'); return false; }
+
+  await logActivity('restore_product', 'products', p.id, { name: p.name });
+  store.products = null; store.stats = null;
+  toast('Produit restauré. Il réapparaît sur le site dans la minute.', 'ok');
+  route();
+  return true;
+}
+
 function afterProducts() {
   document.querySelectorAll('[data-product]').forEach(function (tr) {
     tr.addEventListener('click', function () {
@@ -830,6 +877,19 @@ function afterProducts() {
       openPanel(true);
     });
   });
+
+  /* Action rapide directement sur la ligne, sans ouvrir la fiche. */
+  document.querySelectorAll('[data-row-act]').forEach(function (b) {
+    b.addEventListener('click', function (e) {
+      e.stopPropagation();
+      const prods = store.products || [];
+      const p = prods[+b.dataset.idx];
+      if (!p) return;
+      if (b.dataset.rowAct === 'del') archiveProduct(p, b);
+      else if (b.dataset.rowAct === 'restore') restoreProduct(p, b);
+    });
+  });
+
   bindProductPanel();
 }
 
@@ -940,74 +1000,126 @@ function bindProductPanel() {
 
   /* ------------------------------ Suppression --------------------------- */
   const del = document.getElementById('p-delete');
-  if (del) del.addEventListener('click', async function () {
-    if (!confirmAction(
-      '« ' + p.name + ' » va disparaître du site immédiatement. La fiche et ses variantes restent ' +
-      'en base : pour la remettre en ligne, repassez son statut à « En ligne » ou utilisez le bouton ' +
-      '« Restaurer ». Confirmer la suppression ?'
-    )) return;
-
-    del.disabled = true;
-    const { error } = await sb.from('products').update({ status: 'archived' }).eq('id', p.id);
-    del.disabled = false;
-
-    if (error) { toast('Suppression impossible : ' + error.message, 'err'); return; }
-
-    await logActivity('archive_product', 'products', p.id, { name: p.name });
-    store.products = null; store.stats = null;
-    toast('Produit supprimé du site. Il reste archivé en base, réversible à tout moment.', 'ok');
-    route();
-  });
+  if (del) del.addEventListener('click', function () { archiveProduct(p, del); });
 
   const restore = document.getElementById('p-restore');
-  if (restore) restore.addEventListener('click', async function () {
-    if (!confirmAction('Remettre « ' + p.name + ' » en ligne sur le site ?')) return;
-
-    restore.disabled = true;
-    const { error } = await sb.from('products').update({ status: 'active' }).eq('id', p.id);
-    restore.disabled = false;
-
-    if (error) { toast('Restauration impossible : ' + error.message, 'err'); return; }
-
-    await logActivity('restore_product', 'products', p.id, { name: p.name });
-    store.products = null; store.stats = null;
-    toast('Produit restauré. Il réapparaît sur le site dans la minute.', 'ok');
-    route();
-  });
+  if (restore) restore.addEventListener('click', function () { restoreProduct(p, restore); });
 }
 
 /* ============================== COLLECTIONS ============================== */
 async function pageCollections() {
   const prods = await loadProducts();
 
-  /* Les collections sont les catégories réellement présentes au catalogue. */
+  /* Les collections sont les catégories réellement présentes au catalogue.
+     "active" compte les produits non archivés : c'est ce qui reste visible
+     sur le site pour cette catégorie. */
   const map = {};
   prods.forEach(function (p) {
-    if (!map[p.category]) map[p.category] = { name: p.category, count: 0, img: '' };
+    if (!map[p.category]) map[p.category] = { name: p.category, count: 0, active: 0, img: '' };
     map[p.category].count++;
-    if (!map[p.category].img) map[p.category].img = firstImage(p);
+    if (p.status !== 'archived') {
+      map[p.category].active++;
+      if (!map[p.category].img) map[p.category].img = firstImage(p);
+    }
   });
+  /* Une collection entièrement archivée n'a plus de produit actif pour lui
+     fournir une vignette : on reprend alors la photo d'un produit archivé
+     plutôt que de laisser la case vide. */
+  Object.keys(map).forEach(function (k) {
+    if (map[k].img) return;
+    const any = prods.find(function (p) { return p.category === k && firstImage(p); });
+    if (any) map[k].img = firstImage(any);
+  });
+
   const cols = Object.keys(map).map(function (k) { return map[k]; })
     .sort(function (a, b) { return b.count - a.count; });
 
+  const editableCols = canEdit();
   const rows = cols.map(function (c, i) {
+    const archived = c.active === 0;
     return '<tr>' +
       '<td class="c-main"><div class="cell-main">' + (c.img ? '<img class="thumb" src="' + esc(c.img) + '" alt="">' : '') +
         '<div><div class="t-title">' + esc(c.name) + '</div><div class="t-sub">Catégorie du catalogue</div></div></div></td>' +
-      '<td data-l="Produits" class="right">' + c.count + '</td>' +
+      '<td data-l="Produits en ligne" class="right">' + c.active + ' / ' + c.count + '</td>' +
       '<td data-l="Ordre" class="right dim">' + (i + 1) + '</td>' +
-      '<td data-l="Statut">' + badge('En ligne', 'success') + '</td></tr>';
+      '<td data-l="Statut">' + badge(archived ? 'Archivée' : 'En ligne', archived ? 'info' : 'success') + '</td>' +
+      (editableCols
+        ? '<td data-l="Actions" class="right">' +
+          (archived
+            ? '<button class="btn btn-sm" type="button" data-col-act="restore" data-cat="' + esc(c.name) + '">' + icon('check', 'icon-sm') + 'Restaurer</button>'
+            : '<button class="btn btn-sm btn-danger" type="button" data-col-act="del" data-cat="' + esc(c.name) + '">' + icon('trash', 'icon-sm') + 'Supprimer</button>') +
+          '</td>'
+        : '') +
+    '</tr>';
   }).join('');
 
   return '<section class="card">' +
     cardHead('Collections', '<span class="badge-count">' + cols.length + '</span>') +
     (cols.length
-      ? '<div class="table-wrap"><table class="table"><thead><tr><th>Collection</th><th class="right">Produits</th>' +
-        '<th class="right">Ordre</th><th>Statut</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      ? '<div class="table-wrap"><table class="table"><thead><tr><th>Collection</th><th class="right">Produits en ligne</th>' +
+        '<th class="right">Ordre</th><th>Statut</th>' + (editableCols ? '<th class="right">Actions</th>' : '') + '</tr></thead>' +
+        '<tbody>' + rows + '</tbody></table></div>' +
         '<div class="card-foot"><span class="dim" style="font-size:11px">Les collections suivent les catégories des produits. ' +
+        'Supprimer une collection archive tous ses produits en un clic ; ils restent en base et peuvent être restaurés. ' +
         'Pour en créer une nouvelle, ajoutez une catégorie sur un produit.</span></div>'
       : emptyBlock('Aucune collection', 'Les collections se construisent à partir des catégories du catalogue.')) +
     '</section>';
+}
+
+function afterCollections() {
+  document.querySelectorAll('[data-col-act]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      const cat = b.dataset.cat;
+      if (b.dataset.colAct === 'del') archiveCategory(cat, b);
+      else restoreCategory(cat, b);
+    });
+  });
+}
+
+async function archiveCategory(category, btn) {
+  const targets = (store.products || []).filter(function (p) { return p.category === category && p.status !== 'archived'; });
+  if (!targets.length) return;
+
+  if (!confirmAction(
+    'Supprimer la collection « ' + category + ' » va archiver ' + targets.length +
+    (targets.length > 1 ? ' produits' : ' produit') + ' : ' + (targets.length > 1 ? 'ils disparaissent' : 'il disparaît') +
+    ' du site immédiatement. ' + (targets.length > 1 ? 'Ils restent' : 'Il reste') +
+    ' en base, individuellement ou en restaurant toute la collection. Confirmer ?'
+  )) return;
+
+  if (btn) btn.disabled = true;
+  const { error } = await sb.from('products').update({ status: 'archived' })
+    .eq('category', category).neq('status', 'archived');
+  if (btn) btn.disabled = false;
+  if (error) { toast('Suppression impossible : ' + error.message, 'err'); return; }
+
+  await logActivity('archive_category', 'products', null, { category: category, count: targets.length });
+  store.products = null; store.stats = null;
+  toast('Collection « ' + category + ' » supprimée du site (' +
+    targets.length + (targets.length > 1 ? ' produits archivés).' : ' produit archivé).'), 'ok');
+  route();
+}
+
+async function restoreCategory(category, btn) {
+  const targets = (store.products || []).filter(function (p) { return p.category === category && p.status === 'archived'; });
+  if (!targets.length) return;
+
+  if (!confirmAction(
+    'Restaurer la collection « ' + category + ' » va remettre en ligne ' + targets.length +
+    (targets.length > 1 ? ' produits. Confirmer ?' : ' produit. Confirmer ?')
+  )) return;
+
+  if (btn) btn.disabled = true;
+  const { error } = await sb.from('products').update({ status: 'active' })
+    .eq('category', category).eq('status', 'archived');
+  if (btn) btn.disabled = false;
+  if (error) { toast('Restauration impossible : ' + error.message, 'err'); return; }
+
+  await logActivity('restore_category', 'products', null, { category: category, count: targets.length });
+  store.products = null; store.stats = null;
+  toast('Collection « ' + category + ' » restaurée (' +
+    targets.length + (targets.length > 1 ? ' produits remis en ligne).' : ' produit remis en ligne).'), 'ok');
+  route();
 }
 
 /* Le suivi des stocks décide si une vente est refusée quand la quantité
@@ -1408,7 +1520,7 @@ async function pageSettings() {
     storeCard(s) +
     card('settings', 'Général',
       field('Nom de la boutique', input('s-name', 'NOVRA')) +
-      field('Email de contact', input('s-mail', 'contact@novra.com', { type: 'email' })) +
+      field('Email de contact', input('s-mail', 'novraurban@gmail.com', { type: 'email' })) +
       field('Devise', select('s-cur', ['EUR (€) – Euro', 'CHF – Franc suisse'])) +
       field('Langue par défaut', select('s-lang', ['Français', 'English'])),
       'Ces informations apparaissent sur votre boutique.') +
