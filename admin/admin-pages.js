@@ -664,11 +664,22 @@ function bindProductCreatePanel() {
   if (addPhotos) addPhotos.addEventListener('change', async function () {
     const files = Array.prototype.slice.call(addPhotos.files);
     addPhotos.value = '';
+    let offRatio = 0;
     for (const f of files) {
       const up = await uploadFile(f);
-      if (up) photos.push({ url: up.url });
+      if (up) {
+        photos.push({ url: up.url });
+        if (productPhotoRatioOff(up)) offRatio++;
+      }
     }
     renderPhotos();
+    /* Un avertissement par photo serait indigeste sur un import groupé : un
+       seul résumé, discret, suffit — l'import n'est jamais bloqué. */
+    if (offRatio) {
+      toast(offRatio > 1
+        ? offRatio + ' photos ne sont pas au format 3:4 des fiches produit : elles seront légèrement rognées à l\'affichage.'
+        : '1 photo n\'est pas au format 3:4 des fiches produit : elle sera légèrement rognée à l\'affichage.', 'warn');
+    }
   });
 
   const save = document.getElementById('np-save');
@@ -827,6 +838,14 @@ async function saveProductImages(product, images) {
   return true;
 }
 
+/* Les fiches produit affichent toujours en 3:4 (object-fit:cover) : une
+   photo trop éloignée de ce ratio sera davantage rognée. Pas d'ajustement
+   manuel possible pour les produits (à la différence des sections CMS) :
+   le message ne doit donc jamais laisser croire qu'un tel bouton existe. */
+function productPhotoRatioOff(up) {
+  return !!(up && up.width && up.height && Math.abs((up.width / up.height) - 3 / 4) / (3 / 4) > 0.25);
+}
+
 /* Suppression = archivage réversible. Partagée entre le bouton de la fiche
    produit et l'action rapide sur la ligne du tableau, pour que les deux
    chemins se comportent exactement de la même façon. */
@@ -936,7 +955,11 @@ function bindProductPanel() {
           if (!up) return;
           const next = (target.images || []).slice();
           next[slot] = up.url;
-          if (await saveProductImages(target, next)) { toast('Photo remplacée', 'ok'); refresh(); }
+          if (await saveProductImages(target, next)) {
+            toast('Photo remplacée', 'ok');
+            if (productPhotoRatioOff(up)) toast('Cette photo n\'est pas au format 3:4 : elle sera légèrement rognée à l\'affichage.', 'warn');
+            refresh();
+          }
         };
         inp.click();
         return;
@@ -954,7 +977,11 @@ function bindProductPanel() {
     add.value = '';   /* sinon réimporter le même fichier ne déclenche rien */
     if (!up) return;
     const next = (target.images || []).concat([up.url]);
-    if (await saveProductImages(target, next)) { toast('Photo ajoutée', 'ok'); refresh(); }
+    if (await saveProductImages(target, next)) {
+      toast('Photo ajoutée', 'ok');
+      if (productPhotoRatioOff(up)) toast('Cette photo n\'est pas au format 3:4 : elle sera légèrement rognée à l\'affichage.', 'warn');
+      refresh();
+    }
   });
 
   /* ------------------------- Nom, prix, statut -------------------------- */

@@ -444,6 +444,9 @@ async function openSection(id) {
   app.media = ((draft && draft.payload.media) ? draft.payload.media : (section.section_media || []))
     .slice().sort(function (a, b) { return a.sort_order - b.sort_order; });
   app.slide = 0;
+  /* Le cadrage manuel est une option secondaire : on la referme à chaque
+     nouvelle section ouverte plutôt que de la laisser envahir l'écran. */
+  app.focalOpen = false;
 
   renderCenter();
   renderEditor();
@@ -458,8 +461,8 @@ function renderCenter() {
     if (!m) return '<div class="pv-frame ' + kind + '"></div>';
     const mob = kind === 'mobile';
     const url = mediaSrc((mob && m.mobile_url) ? m.mobile_url : m.desktop_url);
-    const fx = mob ? m.focal_x_mobile : m.focal_x_desktop;
-    const fy = mob ? m.focal_y_mobile : m.focal_y_desktop;
+    const fx = safeFocal(mob ? m.focal_x_mobile : m.focal_x_desktop);
+    const fy = safeFocal(mob ? m.focal_y_mobile : m.focal_y_desktop);
     const inner = m.media_type === 'video'
       ? '<video src="' + esc(url) + '" muted autoplay loop playsinline></video>'
       : '<img src="' + esc(url) + '" alt="" data-focal="' + kind + '" style="object-position:' + fx + '% ' + fy + '%">';
@@ -576,12 +579,16 @@ function renderEditor() {
       (meta ? '<small>' + esc(meta) + '</small>' : '') + '</div></div></div>';
   };
 
+  /* Le picker mobile doit montrer l'image MOBILE quand elle existe : montrer
+     systématiquement le desktop y faisait pointer le focal au mauvais endroit. */
   const focalPick = function (label, kind) {
     if (!m || m.media_type === 'video') return '';
-    const fx = kind === 'mobile' ? m.focal_x_mobile : m.focal_x_desktop;
-    const fy = kind === 'mobile' ? m.focal_y_mobile : m.focal_y_desktop;
+    const mob = kind === 'mobile';
+    const src = mob && m.mobile_url ? m.mobile_url : m.desktop_url;
+    const fx = safeFocal(mob ? m.focal_x_mobile : m.focal_x_desktop);
+    const fy = safeFocal(mob ? m.focal_y_mobile : m.focal_y_desktop);
     return '<div class="media-slot"><span>' + esc(label) + '</span>' +
-      '<div class="focal-pick" data-focal="' + kind + '"><img src="' + esc(mediaSrc(m.desktop_url)) + '" alt="" style="object-position:' + fx + '% ' + fy + '%">' +
+      '<div class="focal-pick" data-focal="' + kind + '"><img src="' + esc(mediaSrc(src)) + '" alt="" style="object-position:' + fx + '% ' + fy + '%">' +
       '<span class="focal-dot" style="left:' + fx + '%;top:' + fy + '%"></span></div>' +
       '<small class="dim">' + fx + ' % / ' + fy + ' %</small></div>';
   };
@@ -613,8 +620,11 @@ function renderEditor() {
         (m ? mediaSlot('Image desktop', m.desktop_url, m.media_type === 'video' ? 'Vidéo MP4' : 'JPG', 'desktop') : '') +
         (m ? mediaSlot('Image mobile', m.mobile_url || m.desktop_url, m.mobile_url ? 'JPG' : 'Reprend le desktop', 'mobile') : '') +
         (m && m.media_type === 'video' ? mediaSlot('Poster (image d\'attente)', m.poster_desktop_url, m.poster_desktop_url ? 'JPG' : 'Aucun', 'poster') : '') +
-        focalPick('Point focal desktop', 'desktop') +
-        focalPick('Point focal mobile', 'mobile') +
+        (m && m.media_type !== 'video'
+          ? '<button class="btn btn-sm" type="button" id="focal-toggle" style="margin-bottom:' + (app.focalOpen ? '10px' : '14px') + '">' +
+              icon('target', 'icon-sm') + (app.focalOpen ? 'Masquer le cadrage' : 'Ajuster le cadrage') + '</button>' +
+            (app.focalOpen ? focalPick('Point focal desktop', 'desktop') + focalPick('Point focal mobile', 'mobile') : '')
+          : '') +
         (canEdit() && !mediaOrderLocked() ? '<label class="btn btn-sm btn-block">' + icon('plus', 'icon-sm') + 'Ajouter un média' +
           '<input type="file" id="add-media" accept="image/*,video/mp4" hidden></label>' : '') +
       '</div>' +
@@ -638,6 +648,16 @@ function renderEditor() {
 }
 
 function bindEditor() {
+  const focalToggle = document.getElementById('focal-toggle');
+  if (focalToggle) focalToggle.addEventListener('click', function () {
+    app.focalOpen = !app.focalOpen;
+    /* renderCenter() est ce qui (re)branche les clics sur les zones de
+       cadrage (grande prévisualisation ET petit sélecteur) : sans lui, le
+       petit sélecteur qui vient d'apparaître resterait inerte au clic. */
+    renderCenter();
+    renderEditor();
+  });
+
   const map = { 'f-status': 'status', 'f-eyebrow': 'eyebrow', 'f-title': 'title', 'f-subtitle': 'subtitle',
     'f-description': 'description', 'f-cta1': 'cta1_label', 'f-cta1url': 'cta1_url',
     'f-cta2': 'cta2_label', 'f-cta2url': 'cta2_url', 'f-position': 'text_position' };
@@ -699,6 +719,9 @@ function bindEditor() {
         }
         renderCenter(); renderEditor();
         toast('Média remplacé. Pensez à publier pour le voir en ligne.', 'ok');
+        /* Même cadre que l'aperçu "Sur le site" (.pv-frame) : l'avertissement
+           reste cohérent avec ce que l'admin voit déjà à l'écran. */
+        if (!isVideo && kind !== 'poster') warnRatioMismatch(up.width, up.height, kind === 'mobile' ? 9 / 16 : 16 / 10);
       };
       inp.click();
     });

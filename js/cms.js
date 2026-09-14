@@ -51,10 +51,18 @@ function cmsWriteCache(pageKey, data) {
 /* ------------------------------ Application ----------------------------- */
 function cmsIsMobile() { return window.matchMedia('(max-width: 768px)').matches; }
 
+/* Une valeur absente, invalide ou mal formée ne doit jamais produire
+   "object-position: undefined% NaN%" sur le site public — repli sur le
+   centre (50) plutôt que de casser le rendu de l'image. */
+function cmsSafeFocal(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 50;
+}
+
 function cmsFocal(media) {
   return cmsIsMobile()
-    ? media.focal_x_mobile + '% ' + media.focal_y_mobile + '%'
-    : media.focal_x_desktop + '% ' + media.focal_y_desktop + '%';
+    ? cmsSafeFocal(media.focal_x_mobile) + '% ' + cmsSafeFocal(media.focal_y_mobile) + '%'
+    : cmsSafeFocal(media.focal_x_desktop) + '% ' + cmsSafeFocal(media.focal_y_desktop) + '%';
 }
 
 function cmsMediaUrl(media) {

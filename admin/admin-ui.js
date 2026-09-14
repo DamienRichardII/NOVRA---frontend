@@ -100,6 +100,24 @@ function initials(name) {
 /* Les URL héritées du dépôt sont relatives à la racine du site */
 function mediaSrc(url) { return !url ? '' : (/^https?:/.test(url) ? url : '../' + url); }
 
+/* Un point focal absent, invalide ou mal formé ne doit jamais produire
+   "object-position: undefined% NaN%" — on retombe sur le centre (50). */
+function safeFocal(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 50;
+}
+
+/* Avertissement discret, jamais bloquant : un ratio très différent du cadre
+   cible sera davantage rogné par object-fit:cover. On ne refuse jamais
+   l'import, on informe juste — l'ajustement du cadrage reste facultatif. */
+function warnRatioMismatch(width, height, targetRatio) {
+  if (!width || !height || !targetRatio) return;
+  const ratio = width / height;
+  if (Math.abs(ratio - targetRatio) / targetRatio > 0.25) {
+    toast('Cette image peut être légèrement rognée dans cet emplacement. Vous pouvez ajuster son cadrage si besoin.', 'warn');
+  }
+}
+
 /* ------------------------------ Composants ------------------------------- */
 function badge(label, kind, plain) {
   return '<span class="badge badge-' + kind + (plain ? ' badge-plain' : '') + '">' + esc(label) + '</span>';
