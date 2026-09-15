@@ -70,7 +70,10 @@
   <!-- ================= HERO ================= -->
   <section class="hero" data-home="hero">
     <div class="hero-media">
-      <video class="hero-video" autoplay muted loop playsinline webkit-playsinline preload="auto"
+      <!-- Boucle pilotée en JS (initHeroVideo, js/main.js) à partir de 8 s
+           (le logo NOVRA de l'intro disparaît à ce moment précis) :
+           pas d'attribut "loop" ici, sinon le navigateur reboucle sur 0. -->
+      <video class="hero-video" autoplay muted playsinline webkit-playsinline preload="auto"
              poster="assets/web/video/novra-hero-poster.jpg"
              aria-label="Film de marque NOVRA">
         <!-- Source unique, identique sur tous les écrans. Ni attribut media,
@@ -82,9 +85,7 @@
     <div class="hero-overlay"></div>
 
     <div class="container hero-inner">
-      <h1 class="hero-logo-title">
-        <img class="hero-main-logo" src="assets/web/logo/novra-wordmark-hero.png" alt="NOVRA" width="710" height="100" fetchpriority="high">
-      </h1>
+      <h1 class="sr-only">NOVRA</h1>
       <div class="hero-actions">
         <a class="btn btn-ghost" href="marketplace.html">Shop</a>
         <a class="btn btn-ghost" href="about.html">Notre mission</a>
@@ -391,7 +392,7 @@
 <script src="js/products.js?v=20260903a" defer></script>
 <script src="js/catalogue.js?v=20260903a" defer></script>
 <script src="js/cart.js?v=20260903a" defer></script>
-<script src="js/main.js?v=20260903a" defer></script>
+<script src="js/main.js?v=20260915g" defer></script>
 <script src="js/cms.js?v=20260903a" defer></script>
 <script src="js/home.js?v=20260903a" defer></script>
 </body>

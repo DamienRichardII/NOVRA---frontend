@@ -225,8 +225,8 @@ function productCardMarkup(p, options) {
       '<div class="product-media-wrap">' +
         '<a class="product-media" href="product.html?id=' + p.id + '" aria-label="' + p.name + '">' +
           badge +
-          '<img class="is-main" src="' + p.images[0] + '" alt="' + p.name + '" width="600" height="800" loading="lazy" decoding="async">' +
-          '<img class="is-alt" src="' + alt + '" alt="" width="600" height="800" loading="lazy" decoding="async" aria-hidden="true">' +
+          '<img class="is-main" src="' + p.images[0] + '" alt="' + p.name + '" width="600" height="800" loading="lazy" decoding="async" style="' + productFocalStyle(p) + '">' +
+          '<img class="is-alt" src="' + alt + '" alt="" width="600" height="800" loading="lazy" decoding="async" aria-hidden="true" style="' + productFocalStyle(p) + '">' +
         '</a>' +
         '<div class="product-quick">' +
           '<button class="btn" type="button" data-quick-add="' + p.id + '">Ajout rapide</button>' +
@@ -455,11 +455,21 @@ function initHeroVideo() {
   const video = document.querySelector('.hero-video');
   if (!video) return;
 
-  /* iOS : lecture intégrée, muette, en boucle, sans interface native */
+  /* Le logo NOVRA de l'intro disparaît entre 7,9 s et 8,0 s (vérifié image
+     par image) : on démarre la lecture à 8 s pile, et on y revient à chaque
+     boucle au lieu de repartir de 0 (d'où "loop" retiré, boucle maison). */
+  const HERO_VIDEO_START = 8;
+  const seekToStart = function () {
+    if (video.duration && video.duration > HERO_VIDEO_START) {
+      try { video.currentTime = HERO_VIDEO_START; } catch (e) { /* pas encore "seekable" */ }
+    }
+  };
+
+  /* iOS : lecture intégrée, muette, en boucle (maison), sans interface native */
   video.muted = true;
   video.defaultMuted = true;
   video.autoplay = true;
-  video.loop = true;
+  video.loop = false;
   video.playsInline = true;
   video.controls = false;
   video.setAttribute('muted', '');
@@ -467,6 +477,7 @@ function initHeroVideo() {
   video.setAttribute('playsinline', '');
   video.setAttribute('webkit-playsinline', '');
   video.removeAttribute('controls');
+  video.removeAttribute('loop');
 
   const tryToPlay = function () {
     const playPromise = video.play();
@@ -476,6 +487,15 @@ function initHeroVideo() {
       playPromise.catch(function () {});
     }
   };
+
+  if (video.readyState >= 1) seekToStart();
+  else video.addEventListener('loadedmetadata', seekToStart, { once: true });
+
+  /* Boucle maison : à la fin de la vidéo, on revient à 8 s plutôt qu'à 0. */
+  video.addEventListener('ended', function () {
+    seekToStart();
+    tryToPlay();
+  });
 
   if (video.readyState >= 2) {
     tryToPlay();
