@@ -677,8 +677,8 @@ function bindProductCreatePanel() {
        seul résumé, discret, suffit — l'import n'est jamais bloqué. */
     if (offRatio) {
       toast(offRatio > 1
-        ? offRatio + ' photos ne sont pas au format 3:4 des fiches produit : elles seront légèrement rognées à l\'affichage.'
-        : '1 photo n\'est pas au format 3:4 des fiches produit : elle sera légèrement rognée à l\'affichage.', 'warn');
+        ? offRatio + ' photos ne sont pas au format 3:4 des fiches produit : elles seront légèrement rognées à l\'affichage. Le cadrage sera ajustable une fois le produit créé.'
+        : '1 photo n\'est pas au format 3:4 des fiches produit : elle sera légèrement rognée à l\'affichage. Le cadrage sera ajustable une fois le produit créé.', 'warn');
     }
   });
 
@@ -759,6 +759,13 @@ function productPanel(i) {
   const editable = canEdit();
   const images = p.images || [];
 
+  const focalX = safeFocal(p.focal_x);
+  const focalY = safeFocal(p.focal_y);
+
+  /* Cette galerie montre le fichier SOURCE (object-fit:contain, voir
+     admin.css) : le point de cadrage du produit ne doit pas y être appliqué,
+     sans quoi la miniature laisserait croire qu'elle est déjà recadrée. Le
+     focal point reste utilisé plus bas, dans le bloc "Ajuster le cadrage". */
   const gallery = images.map(function (src, k) {
     return '<div class="prod-img' + (k === 0 ? ' is-cover' : '') + '" data-img-index="' + k + '">' +
       '<img src="' + esc(mediaSrc(src)) + '" alt="">' +
@@ -791,8 +798,18 @@ function productPanel(i) {
       '<p class="dim" style="font-size:11px;margin:-4px 0 8px">La première photo sert de vignette partout sur le site.</p>' +
       '<div class="prod-gallery">' + gallery + '</div>' +
       (editable
-        ? '<label class="btn btn-sm btn-block" style="margin-bottom:18px">' + icon('plus', 'icon-sm') + 'Ajouter une photo' +
+        ? '<label class="btn btn-sm btn-block" style="margin-bottom:10px">' + icon('plus', 'icon-sm') + 'Ajouter une photo' +
           '<input type="file" id="p-add-image" accept="image/png,image/jpeg,image/webp,image/avif" hidden></label>'
+        : '') +
+      (editable && images.length
+        ? '<button class="btn btn-sm" type="button" id="p-focal-toggle" style="margin-bottom:' + (app.productFocalOpen ? '10px' : '18px') + '">' +
+            icon('target', 'icon-sm') + (app.productFocalOpen ? 'Masquer le cadrage' : 'Ajuster le cadrage') + '</button>'
+        : '') +
+      (editable && images.length && app.productFocalOpen
+        ? '<div class="media-slot" style="margin-bottom:18px"><span>Cadrage (s\'applique à toutes les photos de la fiche)</span>' +
+            '<div class="focal-pick" id="p-focal-pick"><img src="' + esc(mediaSrc(images[0])) + '" alt="" style="object-position:' + focalX + '% ' + focalY + '%">' +
+            '<span class="focal-dot" style="left:' + focalX + '%;top:' + focalY + '%"></span></div>' +
+            '<small class="dim">' + focalX + ' % / ' + focalY + ' %</small></div>'
         : '') +
 
       field('Nom *', input('p-name', p.name, { disabled: !editable })) +
@@ -838,10 +855,21 @@ async function saveProductImages(product, images) {
   return true;
 }
 
+/* Un seul point de cadrage par produit, appliqué à toutes ses photos : plus
+   simple qu'un réglage par photo, et enregistré aussitôt comme le reste des
+   photos, sans passer par le bouton "Enregistrer la fiche". */
+async function saveProductFocal(product, fx, fy) {
+  const { error } = await sb.from('products').update({ focal_x: fx, focal_y: fy }).eq('id', product.id);
+  if (error) { toast('Cadrage non enregistré : ' + error.message, 'err'); return false; }
+  product.focal_x = fx; product.focal_y = fy;
+  await logActivity('update_product_focal', 'products', product.id, { focal_x: fx, focal_y: fy });
+  return true;
+}
+
 /* Les fiches produit affichent toujours en 3:4 (object-fit:cover) : une
-   photo trop éloignée de ce ratio sera davantage rognée. Pas d'ajustement
-   manuel possible pour les produits (à la différence des sections CMS) :
-   le message ne doit donc jamais laisser croire qu'un tel bouton existe. */
+   photo trop éloignée de ce ratio sera davantage rognée. Le cadrage reste
+   ajustable après coup (bouton "Ajuster le cadrage"), donc l'avertissement
+   peut légitimement y renvoyer. */
 function productPhotoRatioOff(up) {
   return !!(up && up.width && up.height && Math.abs((up.width / up.height) - 3 / 4) / (3 / 4) > 0.25);
 }
@@ -886,6 +914,9 @@ async function restoreProduct(p, btn) {
 function afterProducts() {
   document.querySelectorAll('[data-product]').forEach(function (tr) {
     tr.addEventListener('click', function () {
+      /* Le cadrage est une option secondaire : la replier en changeant de
+         produit évite qu'elle reste ouverte sur la mauvaise fiche. */
+      app.productFocalOpen = false;
       const panel = document.querySelector('.panel');
       if (panel) panel.outerHTML = productPanel(+tr.dataset.product);
       wirePanel();
@@ -957,7 +988,7 @@ function bindProductPanel() {
           next[slot] = up.url;
           if (await saveProductImages(target, next)) {
             toast('Photo remplacée', 'ok');
-            if (productPhotoRatioOff(up)) toast('Cette photo n\'est pas au format 3:4 : elle sera légèrement rognée à l\'affichage.', 'warn');
+            if (productPhotoRatioOff(up)) toast('Cette photo n\'est pas au format 3:4 : elle sera légèrement rognée à l\'affichage. Vous pouvez ajuster le cadrage.', 'warn');
             refresh();
           }
         };
@@ -979,9 +1010,26 @@ function bindProductPanel() {
     const next = (target.images || []).concat([up.url]);
     if (await saveProductImages(target, next)) {
       toast('Photo ajoutée', 'ok');
-      if (productPhotoRatioOff(up)) toast('Cette photo n\'est pas au format 3:4 : elle sera légèrement rognée à l\'affichage.', 'warn');
+      if (productPhotoRatioOff(up)) toast('Cette photo n\'est pas au format 3:4 : elle sera légèrement rognée à l\'affichage. Vous pouvez ajuster le cadrage.', 'warn');
       refresh();
     }
+  });
+
+  /* --------------------------- Cadrage produit --------------------------- */
+  const focalToggle = document.getElementById('p-focal-toggle');
+  if (focalToggle) focalToggle.addEventListener('click', function () {
+    app.productFocalOpen = !app.productFocalOpen;
+    refresh();
+  });
+
+  const focalPick = document.getElementById('p-focal-pick');
+  if (focalPick) focalPick.addEventListener('click', function (e) {
+    const r = focalPick.getBoundingClientRect();
+    const x = Math.round(((e.clientX - r.left) / r.width) * 100);
+    const y = Math.round(((e.clientY - r.top) / r.height) * 100);
+    saveProductFocal(p, Math.min(100, Math.max(0, x)), Math.min(100, Math.max(0, y))).then(function (ok) {
+      if (ok) refresh();
+    });
   });
 
   /* ------------------------- Nom, prix, statut -------------------------- */

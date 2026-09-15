@@ -434,7 +434,12 @@
 /* Galerie photos d'une fiche produit */
 .prod-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; margin-bottom: 12px; }
 .prod-img { position: relative; aspect-ratio: 3 / 4; border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; background: var(--surface-2); }
-.prod-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Ici on montre le fichier source tel quel, pas le rendu recadré du site :
+   "contain" laisse voir la photo entière (espace vide accepté) plutôt que
+   de la faire passer pour "zoomée" via un cover forcé en 3:4. Le cadrage
+   réel se prévisualise dans le bloc "Ajuster le cadrage" (.focal-pick),
+   volontairement laissé en object-fit:cover. */
+.prod-img img { width: 100%; height: 100%; object-fit: contain; object-position: center; display: block; }
 .prod-img.is-cover { border-color: var(--text-1); }
 .prod-img b { position: absolute; top: 4px; left: 4px; font-size: 9px; text-transform: uppercase; letter-spacing: .06em;
   background: var(--text-1); color: var(--surface); padding: 2px 5px; border-radius: 3px; }
@@ -457,6 +462,8 @@
 
 /* Miniatures des photos ajoutées avant création du produit */
 .np-photo { position: relative; aspect-ratio: 3 / 4; border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; background: var(--surface-2); }
-.np-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Même logique que .prod-img : avant la création du produit, il n'y a pas
+   encore de cadrage à simuler, donc autant montrer le fichier entier. */
+.np-photo img { width: 100%; height: 100%; object-fit: contain; object-position: center; display: block; }
 .np-photo button { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; padding: 0;
   background: rgba(255,255,255,.92); border: 0; border-radius: 50%; color: #111; line-height: 1; cursor: pointer; }
