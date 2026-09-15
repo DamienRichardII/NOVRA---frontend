@@ -537,7 +537,7 @@ function bindSlideshowBar() {
    Seul Masquer/Afficher y reste proposé ; les diaporamas classiques gardent
    toutes les actions. */
 function mediaOrderLocked() {
-  return !!(app.section && app.section.section_key === 'collections');
+  return !!(app.section && ['collections', 'categories'].indexOf(app.section.section_key) !== -1);
 }
 
 /* Gestion des médias d'un diaporama : ordre, affichage, retrait. */
@@ -550,11 +550,19 @@ function mediaList() {
       return '<button class="btn btn-icon btn-sm" type="button" data-media-act="' + a + '" data-idx="' + i +
         '" title="' + label + '" aria-label="' + label + '"' + (disabled ? ' disabled' : '') + '>' + icon(a === 'del' ? 'trash' : a === 'off' ? (off ? 'eye-off' : 'eye') : a === 'up' ? 'arrow-up' : 'arrow-down', 'icon-sm') + '</button>';
     };
+    /* Sur les sections à identité fixe (Collections, Catégories), remplacer
+       la photo doit être aussi direct que sur la fiche produit : un bouton
+       "Remplacer" posé sur la vignette elle-même, pas besoin de d'abord la
+       sélectionner puis d'aller chercher un second bouton plus bas. */
+    const quickReplace = locked && editable
+      ? '<button class="btn btn-icon btn-sm" type="button" data-quick-replace="' + i + '" title="Remplacer" aria-label="Remplacer la photo">' + icon('edit', 'icon-sm') + '</button>'
+      : '';
     return '<div class="media-row ' + (i === app.slide ? 'is-active' : '') + (off ? ' is-off' : '') + '" data-pick-slide="' + i + '">' +
       '<img src="' + esc(mediaSrc(m.poster_desktop_url || m.desktop_url)) + '" alt="">' +
       '<span class="grow"><strong>' + (locked ? esc(m.alt_text || 'Vignette ' + (i + 1)) : 'Slide ' + (i + 1)) + '</strong><small>' +
         (m.media_type === 'video' ? 'Vidéo' : 'Image') + (off ? ' · masqué' : '') + '</small></span>' +
       (editable ? '<span class="media-row-acts">' +
+        quickReplace +
         (locked ? '' : act('up', 'Monter', i === 0) + act('down', 'Descendre', i === app.media.length - 1)) +
         act('off', off ? 'Afficher' : 'Masquer') +
         (locked ? '' : act('del', 'Retirer', app.media.length < 2)) + '</span>' : '') +
@@ -562,7 +570,7 @@ function mediaList() {
   }).join('') +
   (editable && locked
     ? '<p class="dim" style="font-size:11px;margin-top:8px">Chaque vignette correspond à une collection précise. ' +
-      'Utilisez Masquer / Afficher pour la retirer du site ou la remettre ; Remplacer pour changer sa photo.</p>'
+      'Utilisez l\'icône crayon pour remplacer sa photo directement, ou Masquer / Afficher pour la retirer du site.</p>'
     : '') +
   '</div>';
 }
@@ -698,32 +706,61 @@ function bindEditor() {
 
       const inp = document.createElement('input');
       inp.type = 'file'; inp.accept = 'image/*,video/mp4';
+      /* Un <input type="file"> jamais inséré dans le document peut ne pas
+         ouvrir le sélecteur de fichiers de façon fiable selon le navigateur :
+         on l'ajoute (invisible) le temps de la sélection, puis on le retire. */
+      inp.style.position = 'fixed';
+      inp.style.left = '-9999px';
+      inp.style.opacity = '0';
+      document.body.appendChild(inp);
       inp.onchange = async function () {
-        if (!inp.files.length) return;
-        b.disabled = true;
         const label = b.textContent;
-        b.textContent = 'Envoi…';
-        const up = await uploadFile(inp.files[0]);
-        b.disabled = false; b.textContent = label;
-        if (!up) return;
-        const isVideo = up.mime.indexOf('video') === 0;
-        if (kind === 'mobile') {
-          if (isVideo) { toast('Le visuel mobile doit être une image.', 'err'); return; }
-          target.mobile_url = up.url;
-        } else if (kind === 'poster') {
-          if (isVideo) { toast('Le poster doit être une image.', 'err'); return; }
-          target.poster_desktop_url = up.url;
-        } else {
-          target.desktop_url = up.url;
-          target.media_type = isVideo ? 'video' : 'image';
+        try {
+          if (!inp.files.length) return;
+          b.disabled = true;
+          b.textContent = 'Envoi…';
+          const up = await uploadFile(inp.files[0]);
+          if (!up) return;
+          const isVideo = up.mime.indexOf('video') === 0;
+          if (kind === 'mobile') {
+            if (isVideo) { toast('Le visuel mobile doit être une image.', 'err'); return; }
+            target.mobile_url = up.url;
+          } else if (kind === 'poster') {
+            if (isVideo) { toast('Le poster doit être une image.', 'err'); return; }
+            target.poster_desktop_url = up.url;
+          } else {
+            target.desktop_url = up.url;
+            target.media_type = isVideo ? 'video' : 'image';
+          }
+          renderCenter(); renderEditor();
+          toast('Média remplacé. Pensez à publier pour le voir en ligne.', 'ok');
+          /* Même cadre que l'aperçu "Sur le site" (.pv-frame) : l'avertissement
+             reste cohérent avec ce que l'admin voit déjà à l'écran. */
+          if (!isVideo && kind !== 'poster') warnRatioMismatch(up.width, up.height, kind === 'mobile' ? 9 / 16 : 16 / 10);
+        } catch (e) {
+          console.error('[NOVRA upload] erreur remplacement média', e && e.message ? e.message : e);
+          toast('Le remplacement du média a échoué. L\'ancien média est conservé.', 'err');
+        } finally {
+          b.disabled = false; b.textContent = label;
+          inp.remove();
         }
-        renderCenter(); renderEditor();
-        toast('Média remplacé. Pensez à publier pour le voir en ligne.', 'ok');
-        /* Même cadre que l'aperçu "Sur le site" (.pv-frame) : l'avertissement
-           reste cohérent avec ce que l'admin voit déjà à l'écran. */
-        if (!isVideo && kind !== 'poster') warnRatioMismatch(up.width, up.height, kind === 'mobile' ? 9 / 16 : 16 / 10);
       };
       inp.click();
+    });
+  });
+
+  /* Bouton "Remplacer" posé directement sur chaque vignette (Collections,
+     Catégories) : on sélectionne la bonne diapo puis on délègue au bouton
+     "Remplacer" standard ci-dessus, déjà rebranché par renderEditor(). */
+  document.querySelectorAll('[data-quick-replace]').forEach(function (b) {
+    b.addEventListener('click', function (e) {
+      e.stopPropagation();
+      const idx = +b.dataset.quickReplace;
+      if (!app.media[idx]) return;
+      app.slide = idx;
+      renderCenter(); renderEditor();
+      const replaceBtn = document.querySelector('[data-replace="desktop"]');
+      if (replaceBtn) replaceBtn.click();
     });
   });
 
@@ -834,11 +871,21 @@ async function publishSection() {
 /* Types réellement acceptés : tout le reste est refusé avant l'envoi. */
 const ACCEPTED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'video/mp4'];
 
-/* Dimensions lues côté navigateur pour alimenter la médiathèque. */
+/* Dimensions lues côté navigateur pour alimenter la médiathèque.
+   La promesse ne doit jamais se résoudre deux fois (onload/onerror puis le
+   timeout de secours) : un drapeau "settled" verrouille la première
+   résolution, l'autre chemin devient un no-op. */
 function readDimensions(file) {
   return new Promise(function (resolve) {
+    let settled = false;
     const url = URL.createObjectURL(file);
-    const done = function (w, h, d) { URL.revokeObjectURL(url); resolve({ width: w, height: h, duration_s: d }); };
+    const done = function (w, h, d) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      URL.revokeObjectURL(url);
+      resolve({ width: w, height: h, duration_s: d });
+    };
     if (file.type.indexOf('video') === 0) {
       const v = document.createElement('video');
       v.preload = 'metadata'; v.muted = true;
@@ -851,47 +898,81 @@ function readDimensions(file) {
       i.onerror = function () { done(null, null, null); };
       i.src = url;
     }
-    setTimeout(function () { done(null, null, null); }, 8000);
+    /* Filet de sécurité : si aucun évènement ne se déclenche (fichier
+       corrompu, navigateur capricieux…), l'upload continue quand même
+       plutôt que de rester bloqué indéfiniment. */
+    var timer = setTimeout(function () { done(null, null, null); }, 8000);
   });
 }
 
+/* Chaîne complète sélection → validations → Storage → media_library →
+   retour à l'appelant, entièrement protégée : la moindre exception (réseau,
+   Supabase, accès inattendu) est interceptée, journalée en détail dans la
+   console, et transformée en message clair dans l'admin — jamais un blocage
+   silencieux qui donne l'impression que le bouton ne fait rien. */
 async function uploadFile(file) {
+  console.log('[NOVRA upload] fichier sélectionné', file && file.name, file && file.type, file && file.size);
+
   if (!canEdit()) { toast('Votre rôle ne permet pas de téléverser.', 'err'); return null; }
 
-  if (ACCEPTED_MIME.indexOf(file.type) === -1) {
+  if (!file || ACCEPTED_MIME.indexOf(file.type) === -1) {
+    console.warn('[NOVRA upload] type MIME refusé', file && file.type);
     toast('Format non pris en charge. Utilisez JPG, PNG, WebP ou MP4.', 'err');
     return null;
   }
   if (file.size > 200 * 1024 * 1024) { toast('Fichier trop lourd (200 Mo maximum).', 'err'); return null; }
   if (file.size > 8 * 1024 * 1024 && file.type.indexOf('image') === 0 &&
-      !confirmAction('Cette image pèse ' + Math.round(file.size / 1048576) + ' Mo et ralentira le site. Continuer ?')) return null;
+      !confirmAction('Cette image pèse ' + Math.round(file.size / 1048576) + ' Mo et ralentira le site. Continuer ?')) {
+    toast('Import annulé.', 'warn');
+    return null;
+  }
 
-  const dim = await readDimensions(file);
-  if (file.type.indexOf('image') === 0 && dim.width && dim.width < 1200 &&
-      !confirmAction('Cette image ne fait que ' + dim.width + ' px de large : elle sera floue en plein écran. Continuer ?')) return null;
+  try {
+    const dim = await readDimensions(file);
+    if (file.type.indexOf('image') === 0 && dim.width && dim.width < 1200 &&
+        !confirmAction('Cette image ne fait que ' + dim.width + ' px de large : elle sera floue en plein écran. Continuer ?')) {
+      toast('Import annulé.', 'warn');
+      return null;
+    }
+    console.log('[NOVRA upload] validations OK', dim);
 
-  const now = new Date();
-  const path = 'campaigns/' + now.getFullYear() + '/' + String(now.getMonth() + 1).padStart(2, '0') + '/' +
-    Date.now() + '-' + file.name.toLowerCase().replace(/[^a-z0-9.]+/g, '-');
+    const now = new Date();
+    const path = 'campaigns/' + now.getFullYear() + '/' + String(now.getMonth() + 1).padStart(2, '0') + '/' +
+      Date.now() + '-' + file.name.toLowerCase().replace(/[^a-z0-9.]+/g, '-');
 
-  const { error } = await sb.storage.from(NOVRA_MEDIA_BUCKET).upload(path, file, { upsert: false });
-  if (error) { toast('Téléversement impossible : ' + error.message, 'err'); return null; }
+    console.log('[NOVRA upload] début Supabase Storage', path);
+    const { error } = await sb.storage.from(NOVRA_MEDIA_BUCKET).upload(path, file, { upsert: false });
+    if (error) {
+      console.error('[NOVRA upload] erreur Storage', error.message);
+      toast('Téléversement impossible : ' + error.message, 'err');
+      return null;
+    }
+    console.log('[NOVRA upload] upload terminé');
 
-  const { data: pub } = sb.storage.from(NOVRA_MEDIA_BUCKET).getPublicUrl(path);
+    const { data: pub } = sb.storage.from(NOVRA_MEDIA_BUCKET).getPublicUrl(path);
+    console.log('[NOVRA upload] URL publique', pub && pub.publicUrl);
 
-  /* L'erreur d'insertion est signalée : sans cela le fichier existerait dans
-     le stockage sans jamais apparaître dans la médiathèque. */
-  const { error: libError } = await sb.from('media_library').insert({
-    storage_path: path, public_url: pub.publicUrl, file_name: file.name,
-    folder: file.type.indexOf('video') === 0 ? 'videos' : 'campagnes',
-    mime_type: file.type, bytes: file.size, created_by: app.profile.id,
-    width: dim.width, height: dim.height, duration_s: dim.duration_s
-  });
-  if (libError) toast('Fichier envoyé, mais absent de la médiathèque : ' + libError.message, 'warn');
+    /* L'erreur d'insertion est signalée : sans cela le fichier existerait dans
+       le stockage sans jamais apparaître dans la médiathèque. */
+    const { error: libError } = await sb.from('media_library').insert({
+      storage_path: path, public_url: pub.publicUrl, file_name: file.name,
+      folder: file.type.indexOf('video') === 0 ? 'videos' : 'campagnes',
+      mime_type: file.type, bytes: file.size, created_by: app.profile.id,
+      width: dim.width, height: dim.height, duration_s: dim.duration_s
+    });
+    if (libError) {
+      console.warn('[NOVRA upload] media_library non renseignée', libError.message);
+      toast('Fichier envoyé, mais absent de la médiathèque : ' + libError.message, 'warn');
+    }
 
-  await logActivity('upload_media', 'media_library', path, { bytes: file.size });
-  toast('Média téléversé', 'ok');
-  return { url: pub.publicUrl, mime: file.type, width: dim.width, height: dim.height };
+    await logActivity('upload_media', 'media_library', path, { bytes: file.size });
+    toast('Média téléversé', 'ok');
+    return { url: pub.publicUrl, mime: file.type, width: dim.width, height: dim.height };
+  } catch (e) {
+    console.error('[NOVRA upload] erreur inattendue', e && e.message ? e.message : e);
+    toast('Téléversement impossible : une erreur inattendue est survenue. Réessayez.', 'err');
+    return null;
+  }
 }
 
 const FOLDERS = [['', 'Tous les médias'], ['produits', 'Produits'], ['campagnes', 'Campagnes'],

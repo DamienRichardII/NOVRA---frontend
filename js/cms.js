@@ -188,16 +188,17 @@ function cmsApplySection(section) {
   }
 
   /* Image simple, ou vignettes à identité fixe (les cartes Homme / Femme /
-     Accessoires de l'accueil, chacune liée à son propre lien et son propre
-     titre) : la position prime sur le filtre "actif" ci-dessus, pour que
-     masquer une vignette depuis l'admin fasse disparaître LA BONNE carte au
-     lieu de décaler les photos des autres vers la mauvaise étiquette. */
+     Accessoires de l'accueil, ou les 6 cartes "Par catégorie" — T-shirts,
+     Polos…, chacune liée à son propre lien et son propre titre) : la
+     position prime sur le filtre "actif" ci-dessus, pour que masquer une
+     vignette depuis l'admin fasse disparaître LA BONNE carte au lieu de
+     décaler les photos des autres vers la mauvaise étiquette. */
   const allMedia = (section.section_media || [])
     .slice().sort(function (a, b) { return a.sort_order - b.sort_order; });
-  const images = root.querySelectorAll('.page-hero__image, .split-media img, .collection-card img, .campaign-media img');
+  const images = root.querySelectorAll('.page-hero__image, .split-media img, .collection-card img, .campaign-media img, .cat-card img');
   images.forEach(function (img, i) {
     const m = allMedia[i];
-    const card = img.closest('.collection-card');
+    const card = img.closest('.collection-card, .cat-card');
     if (!m || m.active === false) {
       if (card) card.hidden = true;
       return;
