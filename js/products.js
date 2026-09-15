@@ -457,6 +457,17 @@ function getProductById(id) {
   return products.find(function (p) { return p.id === id; }) || null;
 }
 
+/* Un seul point de cadrage par produit (réglé depuis l'admin), appliqué à
+   toutes ses photos. Absent, invalide ou mal formé : repli sur le centre —
+   jamais de "object-position: undefined% NaN%" sur le site. */
+function safeFocalValue(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 50;
+}
+function productFocalStyle(p) {
+  return 'object-position:' + safeFocalValue(p && p.focalX) + '% ' + safeFocalValue(p && p.focalY) + '%';
+}
+
 function getFeaturedProducts(limit) {
   const list = products.filter(function (p) { return p.featured && p.available !== false; });
   return typeof limit === 'number' ? list.slice(0, limit) : list;

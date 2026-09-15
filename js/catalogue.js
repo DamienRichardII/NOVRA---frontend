@@ -72,7 +72,9 @@ function catalogueBuildProduct(row) {
     technicalDetails: Array.isArray(details.technicalDetails) ? details.technicalDetails : [],
     composition: details.composition || '',
     care: details.care || '',
-    available: row.status === 'active'
+    available: row.status === 'active',
+    focalX: safeFocalValue(row.focal_x),
+    focalY: safeFocalValue(row.focal_y)
   };
 }
 
@@ -117,6 +119,9 @@ function catalogueApply(rows) {
     /* Un produit retiré de la vente disparaît du site sans redéploiement. */
     const sold = row.status === 'active';
     if (p.available !== sold) { p.available = sold; changed = true; }
+
+    const fx = safeFocalValue(row.focal_x), fy = safeFocalValue(row.focal_y);
+    if (p.focalX !== fx || p.focalY !== fy) { p.focalX = fx; p.focalY = fy; changed = true; }
   });
 
   /* Un produit absent de la réponse n'est plus en vente : la lecture
@@ -138,7 +143,7 @@ function catalogueApply(rows) {
 }
 
 function catalogueRefresh() {
-  return novraRest('products?select=slug,name,category,gender,price,images,colors,sizes,details,featured,status&order=sort_order')
+  return novraRest('products?select=slug,name,category,gender,price,images,colors,sizes,details,featured,status,focal_x,focal_y&order=sort_order')
     .then(function (rows) {
       catalogueWriteCache(rows);
       if (catalogueApply(rows)) {

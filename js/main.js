@@ -219,14 +219,18 @@ function productCardMarkup(p, options) {
   const swatches = p.colors.map(function (c) {
     return '<span class="swatch" style="background:' + colorSwatch(c) + '" title="' + c + '"></span>';
   }).join('');
+  /* Ne doit jamais faire planter la grille si products.js déployé n'a pas
+     (encore) la fonction : sans cadrage personnalisé, l'image reste
+     simplement centrée par défaut plutôt que de casser toute la page. */
+  const focalStyle = typeof productFocalStyle === 'function' ? productFocalStyle(p) : '';
 
   return '' +
     '<article class="product-card" data-reveal data-delay="' + ((opts.index || 0) % 4 + 1) + '">' +
       '<div class="product-media-wrap">' +
         '<a class="product-media" href="product.html?id=' + p.id + '" aria-label="' + p.name + '">' +
           badge +
-          '<img class="is-main" src="' + p.images[0] + '" alt="' + p.name + '" width="600" height="800" loading="lazy" decoding="async" style="' + productFocalStyle(p) + '">' +
-          '<img class="is-alt" src="' + alt + '" alt="" width="600" height="800" loading="lazy" decoding="async" aria-hidden="true" style="' + productFocalStyle(p) + '">' +
+          '<img class="is-main" src="' + p.images[0] + '" alt="' + p.name + '" width="600" height="800" loading="lazy" decoding="async" style="' + focalStyle + '">' +
+          '<img class="is-alt" src="' + alt + '" alt="" width="600" height="800" loading="lazy" decoding="async" aria-hidden="true" style="' + focalStyle + '">' +
         '</a>' +
         '<div class="product-quick">' +
           '<button class="btn" type="button" data-quick-add="' + p.id + '">Ajout rapide</button>' +
