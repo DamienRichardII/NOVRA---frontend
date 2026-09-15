@@ -488,11 +488,18 @@ body.has-solid-header { padding-top: var(--header-h); }
 .product-card:hover .product-media img.is-main { opacity: 0; }
 .product-card:hover .product-media img.is-alt { opacity: 1; transform: scale(1.03); }
 
+/* Petite étiquette de collection, pas un bouton : très en retrait par
+   rapport à "Ajout rapide" (.product-quick), qui reste l'élément le plus
+   visible de la carte. Largeur "au contenu" (jamais de bandeau pleine
+   largeur) ; le fond légèrement translucide et le faible letter-spacing
+   évitent l'effet gros pavé noir des anciennes proportions. */
 .product-badge {
-  position: absolute; top: 14px; left: 14px; z-index: 2;
-  background: var(--black); color: var(--white);
-  font-size: .6rem; letter-spacing: .2em; text-transform: uppercase;
-  padding: 6px 10px;
+  position: absolute; top: 12px; left: 12px; z-index: 2;
+  display: inline-block; width: auto; max-width: max-content;
+  background: rgba(10, 10, 10, .92); color: var(--white);
+  font-size: .6rem; font-weight: 500; line-height: 1;
+  letter-spacing: .1em; text-transform: uppercase;
+  padding: 5px 9px;
 }
 .product-quick {
   position: absolute; left: 14px; right: 14px; bottom: 14px; z-index: 2;
