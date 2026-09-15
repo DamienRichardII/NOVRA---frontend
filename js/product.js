@@ -6,10 +6,14 @@
 const pdp = { product: null, color: null, size: null, qty: 1 };
 
 function pdpMarkup(p) {
-  const focalStyle = productFocalStyle(p);
+  /* Pas de style inline lié au cadrage ici : le déploiement en cours ne
+     porte pas encore productFocalStyle() (products.js/main.js), et la
+     grande image (voir plus bas) n'en a de toute façon plus besoin depuis
+     qu'elle est en object-fit:contain. Les vignettes restent en cover,
+     simplement centrées par défaut, comme les cartes marketplace actuelles. */
   const thumbs = p.images.map(function (src, i) {
     return '<button type="button" class="' + (i === 0 ? 'is-active' : '') + '" data-thumb="' + i + '" aria-label="Visuel ' + (i + 1) + '">' +
-      '<img src="' + src + '" alt="" width="84" height="112" loading="lazy" style="' + focalStyle + '"></button>';
+      '<img src="' + src + '" alt="" width="84" height="112" loading="lazy"></button>';
   }).join('');
 
   const colors = p.colors.map(function (c, i) {
