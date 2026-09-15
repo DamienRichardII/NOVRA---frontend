@@ -6,9 +6,10 @@
 const pdp = { product: null, color: null, size: null, qty: 1 };
 
 function pdpMarkup(p) {
+  const focalStyle = productFocalStyle(p);
   const thumbs = p.images.map(function (src, i) {
     return '<button type="button" class="' + (i === 0 ? 'is-active' : '') + '" data-thumb="' + i + '" aria-label="Visuel ' + (i + 1) + '">' +
-      '<img src="' + src + '" alt="" width="84" height="112" loading="lazy"></button>';
+      '<img src="' + src + '" alt="" width="84" height="112" loading="lazy" style="' + focalStyle + '"></button>';
   }).join('');
 
   const colors = p.colors.map(function (c, i) {
@@ -25,6 +26,10 @@ function pdpMarkup(p) {
   return '' +
   '<div class="gallery">' +
     '<div class="gallery-thumbs">' + thumbs + '</div>' +
+    /* La grande image est en object-fit:contain (voir .gallery-main img dans
+       style.css) : elle n'est jamais recadrée, donc le point de cadrage du
+       produit ne doit pas non plus la décentrer — contrairement aux
+       vignettes et aux cartes marketplace, qui restent en cover + focal. */
     '<div class="gallery-main"><img id="pdp-main-image" src="' + p.images[0] + '" alt="' + p.name + '" width="900" height="1200" fetchpriority="high"></div>' +
   '</div>' +
 
