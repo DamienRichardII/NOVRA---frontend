@@ -143,7 +143,12 @@ function catalogueApply(rows) {
 }
 
 function catalogueRefresh() {
-  return novraRest('products?select=slug,name,category,gender,price,images,colors,sizes,details,featured,status,focal_x,focal_y&order=sort_order')
+  /* "description" doit être lue ici : c'est le seul endroit où un produit
+     créé uniquement depuis l'admin (absent de js/products.js) récupère son
+     texte. Sans elle, catalogueBuildProduct() reçoit toujours une chaîne
+     vide, et la fiche produit s'affiche sans description — même si elle a
+     bien été enregistrée en base. */
+  return novraRest('products?select=slug,name,category,gender,price,description,images,colors,sizes,details,featured,status,focal_x,focal_y&order=sort_order')
     .then(function (rows) {
       catalogueWriteCache(rows);
       if (catalogueApply(rows)) {
