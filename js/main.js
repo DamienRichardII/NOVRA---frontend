@@ -278,6 +278,17 @@ function initReveal() {
     });
   }, { rootMargin: '0px 0px -8% 0px', threshold: .12 });
   items.forEach(function (el) { io.observe(el); });
+
+  /* Filet de sécurité : sur certains navigateurs/extensions, l'observateur
+     ne se déclenche jamais (texte qui reste invisible en permanence, même
+     après défilement — constaté en production sur la section "01 - la
+     marque"). Passé un délai raisonnable, on affiche tout ce qui reste
+     caché plutôt que de risquer de perdre un titre ou un texte du site. */
+  setTimeout(function () {
+    document.querySelectorAll('[data-reveal]:not(.is-visible)').forEach(function (el) {
+      el.classList.add('is-visible');
+    });
+  }, 1800);
 }
 
 function initParallax() {
