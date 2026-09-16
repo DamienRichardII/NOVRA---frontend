@@ -97,11 +97,10 @@
      point de ne plus rien reconnaître à l'écran (testé).
 
      Le hero ne fait donc plus une hauteur forcée : il s'arrête à la
-     hauteur de son propre contenu (vidéo + boutons), comme n'importe
-     quelle section. `.hero-media` prend exactement le ratio de la
-     vidéo (1280/732) — aucune bande noire, aucun rognage. Le header,
-     fixe et transparent, se pose directement sur son bord supérieur ;
-     les boutons suivent immédiatement en dessous.
+     hauteur de son propre contenu (la vidéo), comme n'importe quelle
+     section. `.hero-media` prend exactement le ratio de la vidéo
+     (1280/732) — aucune bande noire, aucun rognage. Le header, fixe
+     et transparent, se pose directement sur son bord supérieur.
 
      C'était `min-height:100dvh` qui évitait qu'un bout de la section
      suivante n'apparaisse sous un header fixe : cette hauteur dynamique
@@ -143,12 +142,10 @@
   .hero-logo-title,
   .hero-main-logo { display: none; }
 
-  .hero-inner {
-    padding: 22px var(--gutter) calc(30px + env(safe-area-inset-bottom));
-    text-align: center;
-  }
-  .hero-actions { justify-content: center; margin-top: 0; }
-  .hero-actions .btn { flex: 1; min-width: 0; }
+  /* .hero-inner ne contient plus que le <h1> invisible (boutons Shop /
+     Notre mission retirés) : plus aucun padding ici, sinon il reste un
+     bandeau noir vide entre la vidéo et la section suivante. */
+  .hero-inner { padding: 0; }
 
   .brand { padding: 7px 11px; }
   .brand img { height: 11px; }
@@ -209,8 +206,6 @@
 /* ------------------------------- ≤ 430 px -------------------------------- */
 @media (max-width: 430px) {
   .display-1 { font-size: clamp(2.6rem, 14vw, 3.6rem); }
-  .hero-actions { flex-direction: column; align-items: stretch; }
-  .hero-actions .btn { width: 100%; }
   .stats { grid-template-columns: 1fr; }
   .stat { border-right: 0; border-bottom: 1px solid var(--line); }
   .stat:last-child { border-bottom: 0; }
@@ -251,16 +246,13 @@
   body[data-page="home"] [data-home="marque"]      { order: 2; }
   body[data-page="home"] [data-home="collections"] { order: 3; }
   body[data-page="home"] [data-home="categories"]  { order: 4; }
-  body[data-page="home"] [data-home="produits"]    { order: 5; }
-  body[data-page="home"] [data-home="boutique"]    { order: 6; }
-  body[data-page="home"] [data-home="techno"]      { order: 7; }
-  body[data-page="home"] [data-home="mission"]     { order: 8; }
-  body[data-page="home"] [data-home="adn"]         { order: 9; }
-  body[data-page="home"] [data-home="valeurs"]     { order: 10; }
-  body[data-page="home"] [data-home="communaute"]  { order: 11; }
-  body[data-page="home"] [data-home="chiffres"]    { order: 12; }
-  body[data-page="home"] [data-home="newsletter"]  { order: 13; }
-  body[data-page="home"] [data-home="cta"]         { order: 14; }
+  body[data-page="home"] [data-home="techno"]      { order: 5; }
+  body[data-page="home"] [data-home="mission"]     { order: 6; }
+  body[data-page="home"] [data-home="valeurs"]     { order: 7; }
+  body[data-page="home"] [data-home="communaute"]  { order: 8; }
+  body[data-page="home"] [data-home="chiffres"]    { order: 9; }
+  body[data-page="home"] [data-home="newsletter"]  { order: 10; }
+  body[data-page="home"] [data-home="cta"]         { order: 11; }
 
   .home-mobile { display: block; }
 
@@ -334,8 +326,6 @@
   /* --- Respiration resserrée entre les blocs ---------------------------- */
   body[data-page="home"] .section { padding: 56px 0; }
   body[data-page="home"] .section-sm { padding: 44px 0; }
-  body[data-page="home"] [data-home="collections"],
-  body[data-page="home"] [data-home="boutique"] { padding: 0; }
 
   /* --- Carrousel communauté : lecture tactile pleine largeur ------------ */
   body[data-page="home"] [data-home="communaute"] .carousel {

@@ -798,8 +798,11 @@ function productPanel(i) {
       '<p class="dim" style="font-size:11px;margin:-4px 0 8px">La première photo sert de vignette partout sur le site.</p>' +
       '<div class="prod-gallery">' + gallery + '</div>' +
       (editable
-        ? '<label class="btn btn-sm btn-block" style="margin-bottom:10px">' + icon('plus', 'icon-sm') + 'Ajouter une photo' +
-          '<input type="file" id="p-add-image" accept="image/png,image/jpeg,image/webp,image/avif" hidden></label>'
+        ? '<label class="btn btn-sm btn-block" style="margin-bottom:10px">' + icon('plus', 'icon-sm') + 'Ajouter des photos' +
+          /* "multiple" : le chef de projet peut sélectionner en une fois toutes
+             les photos d'un coloris supplémentaire au lieu de les ajouter une
+             par une. Aucune limite de nombre côté site ni en base. */
+          '<input type="file" id="p-add-image" accept="image/png,image/jpeg,image/webp,image/avif" multiple hidden></label>'
         : '') +
       (editable && images.length
         ? '<button class="btn btn-sm" type="button" id="p-focal-toggle" style="margin-bottom:' + (app.productFocalOpen ? '10px' : '18px') + '">' +
@@ -1020,20 +1023,34 @@ function bindProductPanel() {
   if (add) add.addEventListener('change', async function () {
     if (!add.files.length) return;
     const target = p;
-    const file = add.files[0];
-    add.value = '';   /* réinitialisé tout de suite : sinon réimporter le même fichier après un échec ne déclenche rien */
+    /* Plusieurs photos à la fois (ex. tout un coloris) : on les envoie l'une
+       après l'autre puis on enregistre la fiche une seule fois à la fin,
+       plutôt que de déclencher une écriture en base par photo. */
+    const files = Array.prototype.slice.call(add.files);
+    add.value = '';   /* réinitialisé tout de suite : sinon réimporter les mêmes fichiers après un échec ne déclenche rien */
+    add.disabled = true;
+    let next = (target.images || []).slice();
+    let added = 0;
+    let ratioOff = false;
     try {
-      const up = await uploadFile(file);
-      if (!up) return;
-      const next = (target.images || []).concat([up.url]);
+      for (let i = 0; i < files.length; i++) {
+        const up = await uploadFile(files[i]);
+        if (!up) continue;
+        next = next.concat([up.url]);
+        added++;
+        if (productPhotoRatioOff(up)) ratioOff = true;
+      }
+      if (!added) return;
       if (await saveProductImages(target, next)) {
-        toast('Photo ajoutée', 'ok');
-        if (productPhotoRatioOff(up)) toast('Cette photo n\'est pas au format 3:4 : elle sera légèrement rognée à l\'affichage. Vous pouvez ajuster le cadrage.', 'warn');
+        toast(added > 1 ? added + ' photos ajoutées' : 'Photo ajoutée', 'ok');
+        if (ratioOff) toast('Certaines photos ne sont pas au format 3:4 : elles seront légèrement rognées à l\'affichage. Vous pouvez ajuster le cadrage.', 'warn');
         refresh();
       }
     } catch (e) {
       console.error('[NOVRA upload] erreur ajout photo', e && e.message ? e.message : e);
-      toast('L\'ajout de la photo a échoué. Réessayez.', 'err');
+      toast('L\'ajout de photo a échoué. Réessayez.', 'err');
+    } finally {
+      add.disabled = false;
     }
   });
 
