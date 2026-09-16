@@ -550,11 +550,13 @@ function mediaList() {
       return '<button class="btn btn-icon btn-sm" type="button" data-media-act="' + a + '" data-idx="' + i +
         '" title="' + label + '" aria-label="' + label + '"' + (disabled ? ' disabled' : '') + '>' + icon(a === 'del' ? 'trash' : a === 'off' ? (off ? 'eye-off' : 'eye') : a === 'up' ? 'arrow-up' : 'arrow-down', 'icon-sm') + '</button>';
     };
-    /* Sur les sections à identité fixe (Collections, Catégories), remplacer
-       la photo doit être aussi direct que sur la fiche produit : un bouton
-       "Remplacer" posé sur la vignette elle-même, pas besoin de d'abord la
-       sélectionner puis d'aller chercher un second bouton plus bas. */
-    const quickReplace = locked && editable
+    /* Remplacer une photo doit être aussi direct que sur la fiche produit :
+       un bouton "Remplacer" posé sur la vignette elle-même, pas besoin de
+       d'abord la sélectionner puis d'aller chercher un second bouton plus
+       bas dans l'éditeur. Disponible sur toutes les galeries (fixes comme
+       Collections/Catégories, ou libres comme Communauté) : le chef de
+       projet n'avait pas trouvé le bouton "Remplacer" caché plus bas. */
+    const quickReplace = editable
       ? '<button class="btn btn-icon btn-sm" type="button" data-quick-replace="' + i + '" title="Remplacer" aria-label="Remplacer la photo">' + icon('edit', 'icon-sm') + '</button>'
       : '';
     return '<div class="media-row ' + (i === app.slide ? 'is-active' : '') + (off ? ' is-off' : '') + '" data-pick-slide="' + i + '">' +
@@ -568,9 +570,12 @@ function mediaList() {
         (locked ? '' : act('del', 'Retirer', app.media.length < 2)) + '</span>' : '') +
     '</div>';
   }).join('') +
-  (editable && locked
-    ? '<p class="dim" style="font-size:11px;margin-top:8px">Chaque vignette correspond à une collection précise. ' +
-      'Utilisez l\'icône crayon pour remplacer sa photo directement, ou Masquer / Afficher pour la retirer du site.</p>'
+  (editable
+    ? '<p class="dim" style="font-size:11px;margin-top:8px">' +
+      (locked
+        ? 'Chaque vignette correspond à une collection précise. Utilisez l\'icône crayon pour remplacer sa photo directement, ou Masquer / Afficher pour la retirer du site.'
+        : 'Utilisez l\'icône crayon sur une photo pour la remplacer directement.')
+      + '</p>'
     : '') +
   '</div>';
 }
@@ -749,9 +754,9 @@ function bindEditor() {
     });
   });
 
-  /* Bouton "Remplacer" posé directement sur chaque vignette (Collections,
-     Catégories) : on sélectionne la bonne diapo puis on délègue au bouton
-     "Remplacer" standard ci-dessus, déjà rebranché par renderEditor(). */
+  /* Bouton "Remplacer" posé directement sur chaque vignette de la liste :
+     on sélectionne la bonne diapo puis on délègue au bouton "Remplacer"
+     standard ci-dessus, déjà rebranché par renderEditor(). */
   document.querySelectorAll('[data-quick-replace]').forEach(function (b) {
     b.addEventListener('click', function (e) {
       e.stopPropagation();
