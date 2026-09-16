@@ -19,13 +19,15 @@ const ICONS = {
 };
 
 /* ------------------------- Header & footer partagés ---------------------- */
+/* "Notre mission" (about.html) a été retiré du header à la demande du
+   chef de projet : le lien vit désormais uniquement dans le footer,
+   colonne "La marque" (about.html#mission), déjà présent. */
 const NAV_LINKS = [
   { href: 'index.html', label: 'Accueil', key: 'home' },
   { href: 'marketplace.html', label: 'Shop', key: 'shop' },
   { href: 'marketplace.html?gender=homme', label: 'Homme', key: 'homme' },
   { href: 'marketplace.html?gender=femme', label: 'Femme', key: 'femme' },
   { href: 'marketplace.html?category=accessoires', label: 'Accessoires', key: 'accessoires' },
-  { href: 'about.html', label: 'Notre mission', key: 'about' },
   { href: 'contact.html', label: 'Contact', key: 'contact' }
 ];
 
@@ -104,8 +106,8 @@ function renderFooter() {
     { title: 'La marque', links: [
       ['about.html', 'À propos'],
       ['about.html#mission', 'Notre mission'],
-      ['about.html#technologies', 'Technologies'],
-      ['about.html#engagement', 'Engagement']
+      ['about.html#engagement', 'Engagement'],
+      ['newsletter.html', 'Newsletter']
     ]},
     { title: 'Aide', links: [
       ['suivi.html', 'Suivre ma commande'],

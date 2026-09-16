@@ -385,6 +385,62 @@ body.has-solid-header { padding-top: var(--header-h); }
 .feature p { margin: 0; font-size: .9rem; color: var(--grey-500); }
 .section-dark .feature p { color: var(--white-45); }
 
+/* Slogan "RUN MUST GO ON" (accueil, 01 - La marque) : Fredoka, rond et
+   épais, se rapproche du contour du logo NOVRA. Noir car posé sur fond
+   blanc à cet endroit précis de la page. */
+.run-slogan {
+  font-family: 'Fredoka', var(--font-display), sans-serif;
+  font-weight: 600;
+  font-size: clamp(1.3rem, 2.2vw, 1.8rem);
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  color: var(--black);
+  margin: 0 0 14px;
+}
+
+/* Bande défilante (accueil, remplace la section Technologie) : boucle CSS
+   pure, contenu dupliqué une fois dans le HTML pour un défilement continu
+   sans à-coup au raccord. */
+.marquee-section { padding: 46px 0; }
+.marquee { overflow: hidden; width: 100%; }
+.marquee-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 32px;
+  white-space: nowrap;
+  animation: marquee-scroll 26s linear infinite;
+  will-change: transform;
+}
+.marquee-track span {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-size: clamp(1.3rem, 3.4vw, 2.2rem);
+  letter-spacing: .03em;
+  color: var(--white);
+  position: relative;
+  padding-right: 32px;
+}
+.marquee-track span::after {
+  content: '•';
+  position: absolute;
+  right: 0;
+  opacity: .35;
+}
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track { animation: none; }
+}
+
+/* Chiffres clés réutilisés dans la colonne texte de la section Mission
+   (plus étroite que la section "Chiffres" pleine largeur : 2 colonnes
+   plutôt que 4, sans bordures). */
+.mission-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px 24px; }
+.mission-stat strong { display: block; font-family: var(--font-display); font-size: clamp(1.8rem, 2.6vw, 2.6rem); }
+.mission-stat span { font-size: .66rem; letter-spacing: .16em; text-transform: uppercase; color: var(--white-70); }
+
 /* Blocs collections */
 .collections { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: var(--white); }
 .collection-card {

@@ -248,11 +248,7 @@
   body[data-page="home"] [data-home="categories"]  { order: 4; }
   body[data-page="home"] [data-home="techno"]      { order: 5; }
   body[data-page="home"] [data-home="mission"]     { order: 6; }
-  body[data-page="home"] [data-home="valeurs"]     { order: 7; }
-  body[data-page="home"] [data-home="communaute"]  { order: 8; }
-  body[data-page="home"] [data-home="chiffres"]    { order: 9; }
-  body[data-page="home"] [data-home="newsletter"]  { order: 10; }
-  body[data-page="home"] [data-home="cta"]         { order: 11; }
+  body[data-page="home"] [data-home="communaute"]  { order: 7; }
 
   .home-mobile { display: block; }
 
@@ -280,8 +276,9 @@
   .campaign-body p { color: var(--white-70); font-size: .95rem; margin: 0 0 24px; max-width: 26ch; }
 
   /* --- Collections Homme / Femme / Accessoires en campagnes ------------ */
+  /* Le bloc titre (eyebrow + h2) a été retiré du HTML pour tous les
+     formats : plus besoin de le masquer spécifiquement ici. */
   body[data-page="home"] [data-home="collections"] { padding: 0; }
-  body[data-page="home"] [data-home="collections"] > .container { display: none; }
   body[data-page="home"] .collections { gap: 0; }
   body[data-page="home"] .collection-card { min-height: 82svh; }
   body[data-page="home"] .collection-card img { opacity: .92; }
