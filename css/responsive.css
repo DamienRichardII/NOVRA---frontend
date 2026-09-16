@@ -172,13 +172,15 @@
 
   .product-grid, .product-grid.cols-4 { grid-template-columns: repeat(2, 1fr); gap: 30px 14px; }
   .product-name { font-size: 1rem; }
-  /* Sur mobile, l'ajout rapide reste visible en bas du visuel (pas de survol) */
-  .product-quick { opacity: 1; transform: none; left: 10px; right: 10px; bottom: 10px; }
-  .product-quick .btn { padding: 12px 14px; font-size: .66rem; letter-spacing: .12em; }
+  /* Sur mobile, l'ajout rapide reste visible en permanence (pas de survol) :
+     petite pastille discrète en bas à droite plutôt qu'un bandeau pleine
+     largeur, pour laisser voir le produit — demande du chef de projet. */
+  .product-quick { opacity: 1; transform: none; right: 8px; bottom: 8px; left: auto; }
+  .product-quick .btn { padding: 7px 13px; font-size: .56rem; letter-spacing: .08em; }
   /* Cartes plus étroites (grille à 2 colonnes) : l'étiquette "Nouveauté"
      se resserre encore un peu pour rester discrète et ne jamais empiéter
      sur le sujet de la photo (visage, torse…). */
-  .product-badge { top: 10px; left: 10px; padding: 4px 8px; font-size: .58rem; letter-spacing: .08em; }
+  .product-badge { top: 8px; left: 8px; padding: 3px 7px; font-size: .52rem; letter-spacing: .05em; }
 
   .shop-toolbar { position: static; padding: 16px 0; }
   .sort-wrap span { display: none; }
