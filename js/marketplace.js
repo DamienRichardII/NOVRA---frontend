@@ -32,9 +32,14 @@ function allColors() {
 }
 
 /* ------------------------------ Filtrage --------------------------------- */
+/* La page « Femme » ne doit afficher que les pièces pensées pour elle : les
+   articles unisexe (pensés et photographiés côté homme) n'y apparaissent
+   plus, sur demande du chef de projet. Le filtre « Homme » garde son
+   comportement d'origine (homme + unisexe), rien n'y a été signalé. */
 function matchesGender(p) {
   if (state.gender === 'all') return true;
   if (state.gender === 'unisexe') return p.gender === 'unisexe';
+  if (state.gender === 'femme') return p.gender === 'femme';
   return p.gender === state.gender || p.gender === 'unisexe';
 }
 

@@ -819,8 +819,9 @@ function productPanel(i) {
       '</div>' +
       '<div class="field-row">' +
         field('Catégorie', input('p-cat', p.category, { disabled: !editable })) +
-        field('Statut', select('p-status', [['active', 'En ligne'], ['draft', 'Brouillon'], ['archived', 'Archivé']], p.status)) +
+        field('Genre', select('p-gender', PRODUCT_GENDERS, p.gender || 'homme')) +
       '</div>' +
+      field('Statut', select('p-status', [['active', 'En ligne'], ['draft', 'Brouillon'], ['archived', 'Archivé']], p.status)) +
       field('Description', '<textarea class="textarea" id="p-desc" style="min-height:96px"' + (editable ? '' : ' disabled') + '>' + esc(p.description || '') + '</textarea>') +
 
       '<p class="dim" style="font-size:11px">Le prix saisi ici est celui qui s\'affiche en boutique <strong>et</strong> celui qui est ' +
@@ -978,18 +979,33 @@ function bindProductPanel() {
         const inp = document.createElement('input');
         inp.type = 'file';
         inp.accept = 'image/png,image/jpeg,image/webp,image/avif';
+        /* Un <input type="file"> jamais inséré dans le document peut ne pas
+           ouvrir le sélecteur de fichiers de façon fiable selon le
+           navigateur : on l'ajoute (invisible) le temps de la sélection,
+           puis on le retire. */
+        inp.style.position = 'fixed';
+        inp.style.left = '-9999px';
+        inp.style.opacity = '0';
+        document.body.appendChild(inp);
         inp.onchange = async function () {
-          if (!inp.files.length) return;
-          b.disabled = true;
-          const up = await uploadFile(inp.files[0]);
-          b.disabled = false;
-          if (!up) return;
-          const next = (target.images || []).slice();
-          next[slot] = up.url;
-          if (await saveProductImages(target, next)) {
-            toast('Photo remplacée', 'ok');
-            if (productPhotoRatioOff(up)) toast('Cette photo n\'est pas au format 3:4 : elle sera légèrement rognée à l\'affichage. Vous pouvez ajuster le cadrage.', 'warn');
-            refresh();
+          try {
+            if (!inp.files.length) return;
+            b.disabled = true;
+            const up = await uploadFile(inp.files[0]);
+            if (!up) return;
+            const next = (target.images || []).slice();
+            next[slot] = up.url;
+            if (await saveProductImages(target, next)) {
+              toast('Photo remplacée', 'ok');
+              if (productPhotoRatioOff(up)) toast('Cette photo n\'est pas au format 3:4 : elle sera légèrement rognée à l\'affichage. Vous pouvez ajuster le cadrage.', 'warn');
+              refresh();
+            }
+          } catch (e) {
+            console.error('[NOVRA upload] erreur remplacement photo', e && e.message ? e.message : e);
+            toast('Le remplacement de la photo a échoué. L\'ancienne photo est conservée.', 'err');
+          } finally {
+            b.disabled = false;
+            inp.remove();
           }
         };
         inp.click();
@@ -1004,14 +1020,20 @@ function bindProductPanel() {
   if (add) add.addEventListener('change', async function () {
     if (!add.files.length) return;
     const target = p;
-    const up = await uploadFile(add.files[0]);
-    add.value = '';   /* sinon réimporter le même fichier ne déclenche rien */
-    if (!up) return;
-    const next = (target.images || []).concat([up.url]);
-    if (await saveProductImages(target, next)) {
-      toast('Photo ajoutée', 'ok');
-      if (productPhotoRatioOff(up)) toast('Cette photo n\'est pas au format 3:4 : elle sera légèrement rognée à l\'affichage. Vous pouvez ajuster le cadrage.', 'warn');
-      refresh();
+    const file = add.files[0];
+    add.value = '';   /* réinitialisé tout de suite : sinon réimporter le même fichier après un échec ne déclenche rien */
+    try {
+      const up = await uploadFile(file);
+      if (!up) return;
+      const next = (target.images || []).concat([up.url]);
+      if (await saveProductImages(target, next)) {
+        toast('Photo ajoutée', 'ok');
+        if (productPhotoRatioOff(up)) toast('Cette photo n\'est pas au format 3:4 : elle sera légèrement rognée à l\'affichage. Vous pouvez ajuster le cadrage.', 'warn');
+        refresh();
+      }
+    } catch (e) {
+      console.error('[NOVRA upload] erreur ajout photo', e && e.message ? e.message : e);
+      toast('L\'ajout de la photo a échoué. Réessayez.', 'err');
     }
   });
 
@@ -1040,6 +1062,7 @@ function bindProductPanel() {
     const compareRaw = document.getElementById('p-compare').value.trim();
     const compare = compareRaw === '' ? null : Number(compareRaw);
     const category = document.getElementById('p-cat').value.trim();
+    const gender = document.getElementById('p-gender').value;
     const status = document.getElementById('p-status').value;
     const description = document.getElementById('p-desc').value.trim();
 
@@ -1061,7 +1084,7 @@ function bindProductPanel() {
     save.disabled = true;
     const { error } = await sb.from('products').update({
       name: name, price: price, compare_at: compare,
-      category: category, status: status, description: description || null
+      category: category, gender: gender, status: status, description: description || null
     }).eq('id', p.id);
     save.disabled = false;
 
