@@ -531,7 +531,7 @@ const PRODUCT_COLOR_HEX = {
   'Beige': '#e4dfcd', 'Kaki': '#5a6046', 'Orange': '#e8481c', 'Menthe': '#57e0c0',
   'Corail': '#ff5a5f', 'Rose': '#c9a1a6'
 };
-const PRODUCT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+const PRODUCT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL'];
 
 /* Un slug lisible et unique : nécessaire pour retrouver le produit depuis
    le site (catalogue.js) et depuis le tunnel de commande (create-order). */
