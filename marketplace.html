@@ -42,8 +42,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260916d">
-<link rel="stylesheet" href="css/responsive.css?v=20260916g">
+<link rel="stylesheet" href="css/style.css?v=20260916f">
+<link rel="stylesheet" href="css/responsive.css?v=20260916h">
 <link rel="stylesheet" href="css/animations.css?v=20260903a">
 </head>
 
@@ -56,12 +56,16 @@
   <section class="page-hero page-hero--boutique" id="shop-hero">
     <!-- Diaporama boutique physique NOVRA : rotation lente, crossfade seul -->
     <div class="page-hero__media page-hero__slideshow" aria-hidden="true">
-      <img class="page-hero__slide is-active" src="assets/web/boutique/img_9463.jpg" alt=""
-           width="853" height="1400" fetchpriority="high">
-      <img class="page-hero__slide" src="assets/web/boutique/img_9464.jpg" alt=""
-           width="858" height="1400" fetchpriority="high">
-      <img class="page-hero__slide" src="assets/web/boutique/img_9465.jpg" alt=""
-           width="845" height="1400" fetchpriority="high">
+      <!-- Repli statique : les visuels réellement affichés viennent de la
+           base (section "hero" de la page shop), modifiables depuis Médias
+           et contenus. Remplacés par les photos produits/packaging fournies
+           par le chef de projet (dossier "Boutique - Physique"). -->
+      <img class="page-hero__slide is-active" src="assets/web/boutique/boutique-sac.jpg" alt=""
+           width="1120" height="1400" fetchpriority="high">
+      <img class="page-hero__slide" src="assets/web/boutique/boutique-tshirt-dos.jpg" alt=""
+           width="1120" height="1400" fetchpriority="high">
+      <img class="page-hero__slide" src="assets/web/boutique/boutique-colis.jpg" alt=""
+           width="1120" height="1400" fetchpriority="high">
     </div>
     <div class="page-hero__overlay"></div>
     <div class="container">

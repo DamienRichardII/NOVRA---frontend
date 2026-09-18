@@ -626,13 +626,18 @@ body.has-solid-header { padding-top: var(--header-h); }
 }
 .page-hero__slide.is-active { opacity: 1; }
 
-/* Point focal par visuel — desktop
-   1 : enseigne NOVRA, bob et casquettes
-   2 : logo NOVRA vertical et portant de polos
-   3 : portants de t-shirts et miroir */
-.page-hero__slide:nth-child(1) { object-position: 50% 12%; }
-.page-hero__slide:nth-child(2) { object-position: 50% 28%; }
-.page-hero__slide:nth-child(3) { object-position: 50% 28%; }
+/* Point focal par visuel — repli statique uniquement (desktop). Le
+   diaporama réellement affiché vient de la base (section "hero" de la
+   page shop) : chaque photo porte son propre object-position en ligne,
+   réglable depuis Médias et contenus (cadrage). Ces règles ne servent
+   que si Supabase est injoignable et que le HTML statique ci-dessous
+   s'affiche tel quel.
+   1 : sac shopping NOVRA (logo à mi-hauteur)
+   2 : t-shirt dos imprimé (inscription en haut du cadre)
+   3 : colis d'expédition (texture, sans point focal) */
+.page-hero__slide:nth-child(1) { object-position: 50% 55%; }
+.page-hero__slide:nth-child(2) { object-position: 50% 42%; }
+.page-hero__slide:nth-child(3) { object-position: 50% 50%; }
 
 /* Point focal propre à chaque page interne (desktop) */
 .page-hero--mission .page-hero__image { object-position: 60% 26%; }
