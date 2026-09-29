@@ -144,10 +144,24 @@ function ovFulfilment(order) {
   '</div>';
 }
 
+/* En-tête visible uniquement à l'impression : tant qu'aucun e-mail n'est
+   envoyé après un achat, c'est la seule trace écrite que le client puisse
+   obtenir de sa commande. Volontairement sobre : ce n'est pas une facture
+   fiscale (la société est encore en cours d'immatriculation), seulement un
+   reçu de commande à conserver. */
+function ovPrintHeader(order) {
+  return '<div class="print-only order-print-head">' +
+    '<h2>NOVRA</h2>' +
+    '<p>26 ter rue Jules Princet, 93600 Aulnay-sous-Bois — novraurban@gmail.com</p>' +
+    '<p><strong>Reçu de commande n° ' + ovEsc(order.reference) + '</strong> — ' + ovDate(order.created_at) + '</p>' +
+  '</div>';
+}
+
 /* Vue complète, partagée par la confirmation et le suivi. */
 function ovRender(order, opts) {
   const o = opts || {};
   return '<div class="order-track">' +
+    ovPrintHeader(order) +
     '<div class="order-head">' +
       (o.title ? '<h1 class="display-3" style="margin:0 0 10px">' + ovEsc(o.title) + '</h1>' : '') +
       (o.intro ? '<p class="lead" style="margin:0 0 16px">' + o.intro + '</p>' : '') +
@@ -161,10 +175,11 @@ function ovRender(order, opts) {
     '<div class="order-block"><h3>Votre commande</h3>' + ovItems(order) + ovTotals(order) + '</div>' +
     ovFulfilment(order) +
 
-    '<div class="order-actions">' +
+    '<div class="order-actions no-print">' +
       (o.trackLink !== false
         ? '<a class="btn" href="suivi.html?reference=' + encodeURIComponent(order.reference) + '">Suivre ma commande</a>'
         : '') +
+      '<button type="button" class="btn btn-outline" onclick="window.print()">Imprimer / enregistrer en PDF</button>' +
       '<a class="btn btn-outline" href="marketplace.html">Retourner à la boutique</a>' +
     '</div>' +
   '</div>';

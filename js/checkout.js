@@ -67,6 +67,28 @@ function renderPickupInfo() {
    appelée autant de fois qu'on veut sans jamais perdre l'information. */
 const DELIVERY_REQUIRED = ['address', 'zip', 'city'];
 
+/* Textes du bloc adresse selon le mode : en point relais, les mêmes champs
+   désignent le point choisi par le client, pas son domicile. Sans widget
+   Mondial Relay branché (ça suppose un compte marchand chez eux), c'est la
+   seule façon de savoir où expédier le colis — mieux vaut le demander
+   clairement que de laisser croire qu'on livre chez le client. */
+const ADDRESS_STEP_TEXT = {
+  relay: {
+    title: 'Point relais souhaité',
+    address: 'Nom et adresse du point relais',
+    placeholder: 'Ex. Relais Colis — 12 rue de la Gare',
+    zip: 'Code postal du point relais',
+    city: 'Ville du point relais'
+  },
+  default: {
+    title: 'Adresse de livraison',
+    address: 'Adresse',
+    placeholder: '',
+    zip: 'Code postal',
+    city: 'Ville'
+  }
+};
+
 /* En retrait, l'adresse postale n'a pas lieu d'être : on la masque et on
    lève l'obligation de la remplir, sinon le formulaire refuse de partir. */
 function syncAddressStep() {
@@ -86,6 +108,23 @@ function syncAddressStep() {
     const holder = field.querySelector('.field-error');
     if (holder) holder.textContent = '';
   });
+
+  const isRelay = shippingMethod === 'relay';
+  const t = isRelay ? ADDRESS_STEP_TEXT.relay : ADDRESS_STEP_TEXT.default;
+  const titleEl = document.getElementById('address-step-title');
+  const addressLabel = document.getElementById('address-label');
+  const zipLabel = document.getElementById('zip-label');
+  const cityLabel = document.getElementById('city-label');
+  const addressInput = document.getElementById('address');
+  const note = document.getElementById('relay-note');
+  const address2Field = document.getElementById('address2-field');
+  if (titleEl) titleEl.textContent = t.title;
+  if (addressLabel) addressLabel.textContent = t.address;
+  if (zipLabel) zipLabel.textContent = t.zip;
+  if (cityLabel) cityLabel.textContent = t.city;
+  if (addressInput) addressInput.placeholder = t.placeholder;
+  if (note) note.hidden = !isRelay;
+  if (address2Field) address2Field.hidden = isRelay;
 }
 
 function renderCheckoutSummary() {

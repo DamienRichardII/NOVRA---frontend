@@ -371,6 +371,9 @@ function orderPanel(i) {
         : (a.address
             ? '<p class="dim">' + esc([a.address, a.address2, a.zip, a.city, a.country].filter(Boolean).join(', ')) + '</p>'
             : '<p class="dim">Adresse non renseignée.</p>')) +
+      (o.fulfilment === 'relay'
+        ? '<p class="dim" style="font-size:11px">Point relais choisi par le client — l\'adresse ci-dessus n\'est pas son domicile.</p>'
+        : '') +
 
       '<div class="lbl" style="margin-top:18px">Client</div>' +
       (name ? '<p>' + esc(name) + '</p>' : '') +

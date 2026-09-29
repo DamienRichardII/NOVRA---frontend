@@ -43,8 +43,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260916d">
-<link rel="stylesheet" href="css/responsive.css?v=20260916g">
+<link rel="stylesheet" href="css/style.css?v=20260929a">
+<link rel="stylesheet" href="css/responsive.css?v=20260916h">
 <link rel="stylesheet" href="css/animations.css?v=20260903a">
 </head>
 
@@ -112,24 +112,29 @@
         </section>
 
         <section class="checkout-step" id="address-step">
-          <h2><span class="step-num">03</span>Adresse de livraison</h2>
+          <h2><span class="step-num">03</span><span id="address-step-title">Adresse de livraison</span></h2>
+          <p class="field-note" id="relay-note" hidden style="font-size:.82rem;color:var(--grey-500);margin:-6px 0 16px">
+            Indiquez le nom et l'adresse complète du point relais de votre choix (trouvable sur mondialrelay.fr
+            ou dans l'application de votre transporteur habituel). Sans cette information, nous ne pouvons pas
+            savoir où expédier votre colis.
+          </p>
           <div class="field">
-            <label for="address">Adresse</label>
+            <label for="address" id="address-label">Adresse</label>
             <input type="text" id="address" name="address" autocomplete="address-line1" required>
             <span class="field-error"></span>
           </div>
-          <div class="field">
+          <div class="field" id="address2-field">
             <label for="address2">Complément d'adresse (facultatif)</label>
             <input type="text" id="address2" name="address2" autocomplete="address-line2">
           </div>
           <div class="field-row">
             <div class="field">
-              <label for="zip">Code postal</label>
+              <label for="zip" id="zip-label">Code postal</label>
               <input type="text" id="zip" name="zip" autocomplete="postal-code" inputmode="numeric" required>
               <span class="field-error"></span>
             </div>
             <div class="field">
-              <label for="city">Ville</label>
+              <label for="city" id="city-label">Ville</label>
               <input type="text" id="city" name="city" autocomplete="address-level2" required>
               <span class="field-error"></span>
             </div>
@@ -187,6 +192,6 @@
 <script src="js/catalogue.js?v=20260916c" defer></script>
 <script src="js/cart.js?v=20260903a" defer></script>
 <script src="js/main.js?v=20260916h" defer></script>
-<script src="js/checkout.js?v=20260903a" defer></script>
+<script src="js/checkout.js?v=20260929a" defer></script>
 </body>
 </html>
