@@ -838,6 +838,19 @@ function productPanel(i) {
       '<div class="table-wrap"><table class="table"><thead><tr><th>SKU</th><th>Couleur</th><th>Taille</th><th class="right">Stock</th></tr></thead>' +
       '<tbody>' + variants + '</tbody></table></div>' +
       '<p class="dim" style="margin-top:12px;font-size:11px">Les quantités se modifient depuis l\'écran Stocks.</p>' +
+      (editable
+        ? '<div class="lbl" style="margin-top:18px">Ajouter un coloris</div>' +
+          '<p class="dim" style="font-size:11px;margin:-4px 0 8px">Un clic crée le coloris avec toutes les tailles du produit (stock à 0). ' +
+            'Ajoutez ensuite ses photos ci-dessus et saisissez son stock dans l\'écran Stocks.</p>' +
+          '<div class="chip-row" id="p-add-colors">' +
+            (Object.keys(PRODUCT_COLOR_HEX).filter(function (c) {
+              return (p.colors || []).indexOf(c) === -1;
+            }).map(function (c) {
+              return '<button type="button" class="chip" data-add-color="' + esc(c) + '">' +
+                '<span class="chip-dot" style="background:' + PRODUCT_COLOR_HEX[c] + '"></span>' + esc(c) + '</button>';
+            }).join('') || '<span class="dim" style="font-size:11px">Tous les coloris disponibles sont déjà sur ce produit.</span>') +
+          '</div>'
+        : '') +
     '</div>' +
     (editable
       ? '<div class="panel-foot">' +
@@ -961,6 +974,32 @@ function bindProductPanel() {
     wirePanel();
     bindProductPanel();
   };
+
+  /* ---------------------------- Nouveau coloris ------------------------- */
+  document.querySelectorAll('[data-add-color]').forEach(function (b) {
+    b.addEventListener('click', async function (e) {
+      e.stopPropagation();
+      const color = b.dataset.addColor;
+      const sizes = (p.sizes && p.sizes.length) ? p.sizes.slice()
+        : Array.from(new Set((p.product_variants || []).map(function (v) { return v.size; }).filter(Boolean)));
+      if (!sizes.length) { toast('Ce produit n\'a aucune taille : impossible de créer le coloris.', 'err'); return; }
+      if (!confirmAction('Ajouter le coloris « ' + color + ' » à « ' + p.name + ' » (tailles : ' + sizes.join(', ') + ') ?')) return;
+      b.disabled = true;
+      const rows = sizes.map(function (s) {
+        return { product_id: p.id, sku: p.slug + '-' + slugify(color) + '-' + slugify(s),
+                 color: color, size: s, stock: 0, low_stock_at: 5 };
+      });
+      const { error: vErr } = await sb.from('product_variants').insert(rows);
+      if (vErr) { b.disabled = false; toast('Coloris non ajouté : ' + vErr.message, 'err'); return; }
+      const colors = (p.colors || []).concat([color]);
+      const { error: pErr } = await sb.from('products').update({ colors: colors }).eq('id', p.id);
+      if (pErr) { toast('Références créées, mais la liste des coloris n\'a pas été mise à jour : ' + pErr.message, 'warn'); }
+      await logActivity('add_color', 'products', p.id, { color: color, variantes: rows.length });
+      store.products = null; store.stats = null;
+      toast('Coloris « ' + color + ' » ajouté. Il apparaît sur le site dans la minute.', 'ok');
+      route();
+    });
+  });
 
   /* ------------------------------ Photos ------------------------------- */
   document.querySelectorAll('[data-img-act]').forEach(function (b) {
@@ -1317,8 +1356,12 @@ async function pageStocks() {
         '<div><div class="t-title">' + esc(r.p.name) + '</div><div class="t-sub">' + esc(r.v.sku) + '</div></div></div></td>' +
       '<td data-l="Couleur">' + esc(r.v.color || '—') + '</td>' +
       '<td data-l="Taille">' + esc(r.v.size || '—') + '</td>' +
-      '<td data-l="Stock" class="right"><input class="input stock-input" type="number" min="0" value="' + r.v.stock +
-        '" data-stock-for="' + esc(r.v.id) + '" style="width:84px;text-align:right"' + (canEdit() ? '' : ' disabled') + '></td>' +
+      '<td data-l="Stock" class="right"><span class="stock-stepper" style="display:inline-flex;gap:6px;align-items:center">' +
+        (canEdit() ? '<button class="btn btn-icon btn-sm" type="button" data-step="-1" aria-label="Retirer 1" style="min-width:34px;font-size:18px;line-height:1">−</button>' : '') +
+        '<input class="input stock-input" type="number" inputmode="numeric" min="0" value="' + r.v.stock +
+        '" data-stock-for="' + esc(r.v.id) + '" aria-label="Stock ' + esc(r.p.name + ' ' + (r.v.color || '') + ' ' + (r.v.size || '')) + '" style="width:84px;text-align:center"' + (canEdit() ? '' : ' disabled') + '>' +
+        (canEdit() ? '<button class="btn btn-icon btn-sm" type="button" data-step="1" aria-label="Ajouter 1" style="min-width:34px;font-size:18px;line-height:1">+</button>' : '') +
+      '</span></td>' +
       '<td data-l="Statut">' + badge(r.v.stock === 0 ? 'Rupture' : r.v.stock <= r.v.low_stock_at ? 'Faible' : 'En stock',
         r.v.stock === 0 ? 'danger' : r.v.stock <= r.v.low_stock_at ? 'warning' : 'success') + '</td></tr>';
   }).join('');
@@ -1411,14 +1454,56 @@ function afterStocks() {
   });
   if (document.getElementById('stock-search')) applyStockFilter();
 
+  /* Saisie en place : la page ne se redessine pas, on garde le défilement,
+     les filtres et la ligne en cours. Entrée passe à la ligne suivante. */
+  const refreshRow = function (inp, value) {
+    const tr = inp.closest('tr');
+    const low = (all_low[inp.dataset.stockFor] === undefined) ? 5 : all_low[inp.dataset.stockFor];
+    const state = value === 0 ? 'out' : value <= low ? 'low' : 'ok';
+    tr.dataset.state = state;
+    const cell = tr.querySelector('td[data-l="Statut"]');
+    if (cell) cell.innerHTML = badge(state === 'out' ? 'Rupture' : state === 'low' ? 'Faible' : 'En stock',
+      state === 'out' ? 'danger' : state === 'low' ? 'warning' : 'success');
+  };
+  const all_low = {};
+  (store.products || []).forEach(function (p) {
+    (p.product_variants || []).forEach(function (v) { all_low[v.id] = v.low_stock_at; });
+  });
+
   document.querySelectorAll('[data-stock-for]').forEach(function (inp) {
-    const before = Number(inp.value);
-    inp.addEventListener('change', async function () {
+    inp.dataset.before = inp.value;
+    const commit = async function () {
+      if (inp.dataset.busy) return;
+      const before = Number(inp.dataset.before);
       const next = Math.max(0, Math.round(Number(inp.value) || 0));
       inp.value = next;
+      if (next === before) return;
+      inp.dataset.busy = '1';
       const ok = await saveStock(inp.dataset.stockFor, next, before);
-      if (!ok) inp.value = before;
-      else route();
+      delete inp.dataset.busy;
+      if (!ok) { inp.value = before; return; }
+      inp.dataset.before = String(next);
+      refreshRow(inp, next);
+      inp.style.outline = '2px solid #0a0a0a';
+      setTimeout(function () { inp.style.outline = ''; }, 700);
+    };
+    inp.addEventListener('change', commit);
+    inp.addEventListener('focus', function () { inp.select(); });
+    inp.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      const inputs = Array.prototype.filter.call(document.querySelectorAll('[data-stock-for]'),
+        function (x) { return !x.closest('tr').hidden; });
+      const nxt = inputs[inputs.indexOf(inp) + 1];
+      inp.blur();
+      if (nxt) nxt.focus();
+    });
+  });
+  document.querySelectorAll('[data-step]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const inp = btn.closest('.stock-stepper').querySelector('[data-stock-for]');
+      inp.value = Math.max(0, (Number(inp.value) || 0) + Number(btn.dataset.step));
+      inp.dispatchEvent(new Event('change'));
     });
   });
 }

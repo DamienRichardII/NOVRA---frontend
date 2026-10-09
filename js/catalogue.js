@@ -116,6 +116,14 @@ function catalogueApply(rows) {
       }
     }
 
+    /* Coloris ajoutés depuis l'admin : on complète la liste statique sans
+       jamais en retirer (le repli hors ligne reste la référence de base). */
+    if (Array.isArray(row.colors)) {
+      row.colors.forEach(function (c) {
+        if (c && p.colors.indexOf(c) === -1) { p.colors.push(c); changed = true; }
+      });
+    }
+
     /* Un produit retiré de la vente disparaît du site sans redéploiement. */
     const sold = row.status === 'active';
     if (p.available !== sold) { p.available = sold; changed = true; }
