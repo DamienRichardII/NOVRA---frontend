@@ -20,7 +20,9 @@ const COLOR_SWATCHES = {
   'Orange': '#e8481c',
   'Menthe': '#57e0c0',
   'Corail': '#ff5a5f',
-  'Rose': '#c9a1a6'
+  'Rose': '#c9a1a6',
+  'Bleu roi': '#1e4fc2',
+  'Vert clair': '#8fd694'
 };
 
 const products = [

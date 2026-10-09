@@ -532,7 +532,8 @@ const PRODUCT_GENDERS = [['homme', 'Homme'], ['femme', 'Femme'], ['unisexe', 'Un
 const PRODUCT_COLOR_HEX = {
   'Noir': '#111111', 'Blanc': '#f2f2f2', 'Gris': '#8a8d90', 'Anthracite': '#33363a',
   'Beige': '#e4dfcd', 'Kaki': '#5a6046', 'Orange': '#e8481c', 'Menthe': '#57e0c0',
-  'Corail': '#ff5a5f', 'Rose': '#c9a1a6'
+  'Corail': '#ff5a5f', 'Rose': '#c9a1a6',
+  'Bleu roi': '#1e4fc2', 'Vert clair': '#8fd694'
 };
 const PRODUCT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL'];
 
@@ -1272,15 +1273,46 @@ async function pageStocks() {
   prods.forEach(function (p) {
     (p.product_variants || []).forEach(function (v) { all.push({ p: p, v: v }); });
   });
-  all.sort(function (a, b) { return a.v.stock - b.v.stock; });
+  /* Classement par produit, couleur puis taille : le chef de projet retrouve
+     un article là où il l'attend. L'ancien tri par stock croissant, couplé à
+     une coupe à 120 lignes, rendait inaccessibles toutes les références en
+     stock dès que le catalogue dépassait 120 variantes. */
+  const sizeOrder = PRODUCT_SIZES.concat(['TU']);
+  all.sort(function (a, b) {
+    return String(a.p.name).localeCompare(String(b.p.name), 'fr') ||
+      String(a.v.color || '').localeCompare(String(b.v.color || ''), 'fr') ||
+      sizeOrder.indexOf(a.v.size) - sizeOrder.indexOf(b.v.size);
+  });
 
   const total = all.reduce(function (s, r) { return s + r.v.stock; }, 0);
   const out = all.filter(function (r) { return r.v.stock === 0; }).length;
   const low = all.filter(function (r) { return r.v.stock > 0 && r.v.stock <= r.v.low_stock_at; }).length;
   const value = all.reduce(function (s, r) { return s + r.v.stock * Number(r.p.price); }, 0);
 
-  const rows = all.slice(0, 120).map(function (r) {
-    return '<tr data-variant="' + esc(r.v.id) + '">' +
+  const stateOf = function (v) { return v.stock === 0 ? 'out' : v.stock <= v.low_stock_at ? 'low' : 'ok'; };
+  const productOptions = prods.slice().sort(function (a, b) { return String(a.name).localeCompare(String(b.name), 'fr'); })
+    .map(function (p) {
+      return '<option value="' + esc(p.id) + '"' + (app.stockProd === p.id ? ' selected' : '') + '>' + esc(p.name) + '</option>';
+    }).join('');
+  const stockTools =
+    '<div class="field-row" style="padding:14px 16px 0;gap:10px;align-items:end">' +
+      '<div class="field" style="margin:0;flex:2"><label for="stock-search">Rechercher</label>' +
+        '<input class="input" type="search" id="stock-search" placeholder="Produit, couleur, taille, SKU…" value="' + esc(app.stockQ || '') + '"></div>' +
+      '<div class="field" style="margin:0;flex:2"><label for="stock-product">Produit</label>' +
+        '<select class="input" id="stock-product"><option value="">Tous les produits</option>' + productOptions + '</select></div>' +
+      '<div class="field" style="margin:0;flex:1"><label for="stock-state">Statut</label>' +
+        '<select class="input" id="stock-state">' +
+          ['', 'out', 'low', 'ok'].map(function (k, i) {
+            return '<option value="' + k + '"' + ((app.stockState || '') === k ? ' selected' : '') + '>' +
+              ['Tous', 'Ruptures', 'Stock faible', 'En stock'][i] + '</option>';
+          }).join('') +
+        '</select></div>' +
+    '</div>' +
+    '<p class="dim" id="stock-count" style="padding:8px 16px 0;font-size:11px"></p>';
+
+  const rows = all.map(function (r) {
+    return '<tr data-variant="' + esc(r.v.id) + '" data-prod="' + esc(r.p.id) + '" data-state="' + stateOf(r.v) + '"' +
+      ' data-search="' + esc([r.p.name, r.v.color, r.v.size, r.v.sku].join(' ').toLowerCase()) + '">' +
       '<td class="c-main"><div class="cell-main">' + (firstImage(r.p) ? '<img class="thumb" src="' + esc(firstImage(r.p)) + '" alt="">' : '') +
         '<div><div class="t-title">' + esc(r.p.name) + '</div><div class="t-sub">' + esc(r.v.sku) + '</div></div></div></td>' +
       '<td data-l="Couleur">' + esc(r.v.color || '—') + '</td>' +
@@ -1310,6 +1342,7 @@ async function pageStocks() {
     inventoryBanner(prods, total) +
     '<div class="grid-main g-side">' +
       '<section class="card">' + cardHead('Toutes les références', '<span class="badge-count">' + all.length + '</span>') +
+        stockTools +
         '<div class="table-wrap"><table class="table"><thead><tr><th>Produit</th><th>Couleur</th><th>Taille</th>' +
         '<th class="right">Stock</th><th>Statut</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
       '</section>' +
@@ -1352,6 +1385,31 @@ function afterStocks() {
   if (off) off.addEventListener('click', function () {
     if (confirmAction('Désactiver le suivi ? La boutique acceptera des commandes sur des articles en rupture.')) setInventoryTracking(false);
   });
+
+  /* Recherche et filtres : appliqués côté navigateur, et conservés quand
+     l'écran se redessine après chaque enregistrement. */
+  const applyStockFilter = function () {
+    const q = (document.getElementById('stock-search').value || '').trim().toLowerCase();
+    const prod = document.getElementById('stock-product').value;
+    const state = document.getElementById('stock-state').value;
+    app.stockQ = q; app.stockProd = prod; app.stockState = state;
+    let shown = 0;
+    const trs = document.querySelectorAll('tr[data-variant]');
+    trs.forEach(function (tr) {
+      const ok = (!q || tr.dataset.search.indexOf(q) !== -1) &&
+                 (!prod || tr.dataset.prod === prod) &&
+                 (!state || tr.dataset.state === state);
+      tr.hidden = !ok;
+      if (ok) shown++;
+    });
+    const count = document.getElementById('stock-count');
+    if (count) count.textContent = shown + ' référence' + (shown > 1 ? 's' : '') + ' affichée' + (shown > 1 ? 's' : '') + ' sur ' + trs.length + '.';
+  };
+  ['stock-search', 'stock-product', 'stock-state'].forEach(function (id) {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener(id === 'stock-search' ? 'input' : 'change', applyStockFilter);
+  });
+  if (document.getElementById('stock-search')) applyStockFilter();
 
   document.querySelectorAll('[data-stock-for]').forEach(function (inp) {
     const before = Number(inp.value);
