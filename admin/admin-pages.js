@@ -1352,6 +1352,7 @@ async function pageStocks() {
   const rows = all.map(function (r) {
     return '<tr data-variant="' + esc(r.v.id) + '" data-prod="' + esc(r.p.id) + '" data-state="' + stateOf(r.v) + '"' +
       ' data-search="' + esc([r.p.name, r.v.color, r.v.size, r.v.sku].join(' ').toLowerCase()) + '">' +
+      (canEdit() ? '<td style="width:36px"><input type="checkbox" class="stock-pick" data-pick="' + esc(r.v.id) + '" aria-label="Sélectionner ' + esc(r.p.name + ' ' + (r.v.color || '') + ' ' + (r.v.size || '')) + '" style="width:18px;height:18px"></td>' : '') +
       '<td class="c-main"><div class="cell-main">' + (firstImage(r.p) ? '<img class="thumb" src="' + esc(firstImage(r.p)) + '" alt="">' : '') +
         '<div><div class="t-title">' + esc(r.p.name) + '</div><div class="t-sub">' + esc(r.v.sku) + '</div></div></div></td>' +
       '<td data-l="Couleur">' + esc(r.v.color || '—') + '</td>' +
@@ -1386,7 +1387,17 @@ async function pageStocks() {
     '<div class="grid-main g-side">' +
       '<section class="card">' + cardHead('Toutes les références', '<span class="badge-count">' + all.length + '</span>') +
         stockTools +
-        '<div class="table-wrap"><table class="table"><thead><tr><th>Produit</th><th>Couleur</th><th>Taille</th>' +
+        (canEdit()
+          ? '<div id="stock-bulk" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;margin:10px 16px 0;border:1px solid var(--line,#e2e2e2);border-radius:6px;position:sticky;top:0;z-index:5;background:var(--surface,#fff)">' +
+              '<label style="display:flex;gap:6px;align-items:center;font-size:12px"><input type="checkbox" id="stock-pick-all" style="width:18px;height:18px"> Tout sélectionner (lignes affichées)</label>' +
+              '<strong id="stock-picked" style="font-size:12px;margin-left:6px">0 sélectionnée</strong>' +
+              '<span style="flex:1"></span>' +
+              '<select class="input" id="bulk-mode" style="width:auto"><option value="set">Mettre à</option><option value="add">Ajouter</option><option value="sub">Retirer</option></select>' +
+              '<input class="input" type="number" id="bulk-value" min="0" value="0" inputmode="numeric" style="width:90px;text-align:center" aria-label="Quantité">' +
+              '<button class="btn btn-sm btn-primary" type="button" id="bulk-apply" disabled>Appliquer</button>' +
+            '</div>'
+          : '') +
+        '<div class="table-wrap"><table class="table"><thead><tr>' + (canEdit() ? '<th></th>' : '') + '<th>Produit</th><th>Couleur</th><th>Taille</th>' +
         '<th class="right">Stock</th><th>Statut</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
       '</section>' +
       '<aside class="panel"><div class="panel-head"><h2>Derniers mouvements</h2></div>' +
@@ -1499,6 +1510,74 @@ function afterStocks() {
       if (nxt) nxt.focus();
     });
   });
+  /* ---------------------- Sélection multiple + action groupée ------------- */
+  const picks = function () { return Array.prototype.slice.call(document.querySelectorAll('.stock-pick:checked')); };
+  const syncBulk = function () {
+    const n = picks().length;
+    const lbl = document.getElementById('stock-picked');
+    const apply = document.getElementById('bulk-apply');
+    if (lbl) lbl.textContent = n + (n > 1 ? ' sélectionnées' : ' sélectionnée');
+    if (apply) apply.disabled = n === 0;
+  };
+  document.querySelectorAll('.stock-pick').forEach(function (c) { c.addEventListener('change', syncBulk); });
+  const pickAll = document.getElementById('stock-pick-all');
+  if (pickAll) pickAll.addEventListener('change', function () {
+    document.querySelectorAll('tr[data-variant]').forEach(function (tr) {
+      const c = tr.querySelector('.stock-pick');
+      if (c) c.checked = pickAll.checked && !tr.hidden;
+    });
+    syncBulk();
+  });
+  /* Un changement de filtre ne doit pas laisser cochées des lignes masquées. */
+  ['stock-search', 'stock-product', 'stock-state'].forEach(function (id) {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener(id === 'stock-search' ? 'input' : 'change', function () {
+      document.querySelectorAll('tr[data-variant][hidden] .stock-pick').forEach(function (c) { c.checked = false; });
+      if (pickAll) pickAll.checked = false;
+      syncBulk();
+    });
+  });
+
+  const bulkApply = document.getElementById('bulk-apply');
+  if (bulkApply) bulkApply.addEventListener('click', async function () {
+    const mode = document.getElementById('bulk-mode').value;
+    const val = Math.max(0, Math.round(Number(document.getElementById('bulk-value').value) || 0));
+    const rowsSel = picks().map(function (c) { return c.closest('tr'); });
+    if (!rowsSel.length) return;
+    const changes = [];
+    rowsSel.forEach(function (tr) {
+      const inp = tr.querySelector('[data-stock-for]');
+      const prev = Number(inp.dataset.before);
+      const next = mode === 'set' ? val : mode === 'add' ? prev + val : Math.max(0, prev - val);
+      if (next !== prev) changes.push({ inp: inp, id: inp.dataset.stockFor, prev: prev, next: next });
+    });
+    if (!changes.length) { toast('Aucune quantité à modifier.', 'warn'); return; }
+    const verb = mode === 'set' ? 'mettre à ' + val : mode === 'add' ? 'ajouter ' + val + ' à' : 'retirer ' + val + ' à';
+    if (!confirmAction('Vous allez ' + verb + ' ' + changes.length + ' référence(s). Confirmer ?')) return;
+
+    bulkApply.disabled = true;
+    const results = await Promise.all(changes.map(function (c) {
+      return sb.from('product_variants').update({ stock: c.next }).eq('id', c.id).then(function (r) { return !r.error; });
+    }));
+    const done = changes.filter(function (c, i) { return results[i]; });
+    if (done.length) {
+      await sb.from('stock_movements').insert(done.map(function (c) {
+        return { variant_id: c.id, delta: c.next - c.prev, reason: 'Correction manuelle (groupée)', created_by: app.profile.id };
+      }));
+      await logActivity('update_stock_bulk', 'product_variants', null, { count: done.length, mode: mode, value: val });
+      store.products = null; store.moves = null; store.stats = null;
+      done.forEach(function (c) {
+        c.inp.value = c.next; c.inp.dataset.before = String(c.next);
+        refreshRow(c.inp, c.next);
+      });
+    }
+    document.querySelectorAll('.stock-pick').forEach(function (c) { c.checked = false; });
+    if (pickAll) pickAll.checked = false;
+    syncBulk();
+    if (done.length === changes.length) toast(done.length + ' référence(s) mises à jour.', 'ok');
+    else toast(done.length + ' sur ' + changes.length + ' mises à jour : réessayez pour les autres.', 'warn');
+  });
+
   document.querySelectorAll('[data-step]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       const inp = btn.closest('.stock-stepper').querySelector('[data-stock-for]');
