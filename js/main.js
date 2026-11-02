@@ -568,6 +568,27 @@ function initHeroVideo() {
   s.defer = true;
   s.src = '/_vercel/insights/script.js';
   document.head.appendChild(s);
+
+  /* Compteur de visiteurs pour l'écran Analytics de l'admin. Un identifiant
+     aléatoire par navigateur, sans donnée personnelle ; les équipes qui ont
+     ouvert l'admin sur cet appareil ne sont pas comptées. */
+  document.addEventListener('DOMContentLoaded', function () {
+    try {
+      if (typeof NOVRA_SUPABASE_URL === 'undefined' || localStorage.getItem('novra_no_track')) return;
+      let vid = localStorage.getItem('novra_vid');
+      if (!vid || !/^[a-z0-9]{8,40}$/.test(vid)) {
+        vid = Array.prototype.map.call(crypto.getRandomValues(new Uint8Array(12)), function (b) {
+          return (b % 36).toString(36);
+        }).join('');
+        localStorage.setItem('novra_vid', vid);
+      }
+      fetch(NOVRA_SUPABASE_URL + '/rest/v1/rpc/track_visit', {
+        method: 'POST', keepalive: true,
+        headers: { apikey: NOVRA_SUPABASE_ANON_KEY, Authorization: 'Bearer ' + NOVRA_SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_path: location.pathname, p_visitor: vid })
+      }).catch(function () {});
+    } catch (e) { /* stockage indisponible : la visite n'est simplement pas comptée */ }
+  });
 })();
 
 /* --------------------------------- Init ---------------------------------- */

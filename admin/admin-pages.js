@@ -1726,6 +1726,77 @@ async function pageCrm() {
 }
 
 /* =============================== ANALYTICS =============================== */
+/* Visiteurs du site : compteur maison (table site_visits). Un visiteur =
+   un navigateur ; les équipes connectées à l'admin sur cet appareil ne sont
+   pas comptées dans les statistiques. */
+async function loadVisitorStats() {
+  try { localStorage.setItem('novra_no_track', '1'); } catch (e) { /* sans conséquence */ }
+  const { data, error } = await sb.rpc('admin_visitor_stats');
+  if (error) return { error: error.message };
+  return data || {};
+}
+
+function visitorBars(rows, fmt) {
+  const max = Math.max.apply(null, rows.map(function (r) { return r.visitors; }).concat([1]));
+  return '<div style="display:flex;align-items:flex-end;gap:3px;height:150px;padding:6px 4px 0">' +
+    rows.map(function (r) {
+      const h = Math.max(2, Math.round(r.visitors / max * 100));
+      return '<div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;height:100%" ' +
+        'title="' + esc(fmt(r.d)) + ' : ' + r.visitors + ' visiteur(s), ' + r.views + ' page(s) vue(s)">' +
+        '<div style="height:' + h + '%;background:var(--ink,#0a0a0a);opacity:' + (r.visitors ? 1 : .15) + ';border-radius:2px 2px 0 0"></div></div>';
+    }).join('') + '</div>' +
+    '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--grey-500,#6f6f6f);padding:4px 4px 0">' +
+      '<span>' + esc(fmt(rows[0].d)) + '</span><span>' + esc(fmt(rows[rows.length - 1].d)) + '</span></div>';
+}
+
+function visitorsSection(v) {
+  if (v.error) {
+    return '<section class="card mb-18">' + cardHead('Visiteurs du site') +
+      emptyBlock('Compteur non activé',
+        "La table de comptage n'est pas encore créée en base. Exécutez le fichier supabase/migrations/20261102_site_visits.sql dans l'éditeur SQL de Supabase.") +
+      '</section>';
+  }
+  const kp = function (o) { return o || { visitors: 0, views: 0 }; };
+  const day = function (d) { return new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }); };
+  const month = function (d) { return new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }); };
+  const weekLabel = function (d) { return 'sem. du ' + day(d); };
+  const daily = v.daily || [], weekly = v.weekly || [], monthly = v.monthly || [];
+  const empty = !daily.some(function (r) { return r.visitors > 0; }) && !monthly.some(function (r) { return r.visitors > 0; });
+
+  const btn = function (p, label, on) {
+    return '<button type="button" class="chip' + (on ? ' is-active' : '') + '" data-p="' + p + '" ' +
+      'onclick="var b=this.parentNode;b.querySelectorAll(\'.chip\').forEach(function(c){c.classList.toggle(\'is-active\',c===this)}.bind(this));' +
+      'document.querySelectorAll(\'[data-vs]\').forEach(function(e){e.hidden=e.dataset.vs!==\'' + p + '\'})">' + label + '</button>';
+  };
+  const top = (v.top_pages || []).map(function (p) {
+    return '<div class="total-row"><span>' + esc(p.path) + '</span><span>' + p.visitors + ' vis. · ' + p.views + ' vues</span></div>';
+  }).join('');
+
+  return '<div class="kpi-row mb-18">' +
+      kpiCard({ label: "Visiteurs aujourd'hui", value: String(kp(v.today).visitors), icon: 'users', tone: 'b' }) +
+      kpiCard({ label: 'Visiteurs cette semaine', value: String(kp(v.week).visitors), icon: 'users', tone: 'v' }) +
+      kpiCard({ label: 'Visiteurs ce mois-ci', value: String(kp(v.month).visitors), icon: 'users', tone: 'g' }) +
+      kpiCard({ label: 'Pages vues ce mois-ci', value: String(kp(v.month).views), icon: 'trend', tone: 'b' }) +
+    '</div>' +
+    '<div class="grid-main g-side mb-18">' +
+      '<section class="card">' + cardHead('Visiteurs du site',
+          '<span style="display:inline-flex;gap:6px">' + btn('d', 'Par jour', true) + btn('w', 'Par semaine', false) + btn('m', 'Par mois', false) + '</span>') +
+        '<div class="card-pad">' +
+          (empty
+            ? emptyBlock('Aucune visite enregistrée pour l\'instant',
+                'Le compteur démarre dès la mise en ligne. Les visites des équipes connectées à l\'admin ne sont pas comptées.')
+            : '<div data-vs="d">' + visitorBars(daily, day) + '<p class="dim" style="font-size:11px;margin:8px 4px 0">30 derniers jours</p></div>' +
+              '<div data-vs="w" hidden>' + visitorBars(weekly, weekLabel) + '<p class="dim" style="font-size:11px;margin:8px 4px 0">12 dernières semaines</p></div>' +
+              '<div data-vs="m" hidden>' + visitorBars(monthly, month) + '<p class="dim" style="font-size:11px;margin:8px 4px 0">12 derniers mois</p></div>') +
+        '</div>' +
+      '</section>' +
+      '<aside class="panel"><div class="panel-head"><h2>Pages les plus vues</h2></div>' +
+        '<div class="panel-body">' + (top || '<p class="dim">Pas encore de données.</p>') +
+          '<p class="dim" style="font-size:11px;margin-top:12px">Un visiteur = un navigateur. Un même client sur deux appareils compte pour deux.</p>' +
+        '</div></aside>' +
+    '</div>';
+}
+
 async function pageAnalytics() {
   const s = await loadStats();
   const prods = await loadProducts();
@@ -1738,7 +1809,7 @@ async function pageAnalytics() {
   const rev = Number(s.revenue_30d || 0);
   const n = Number(s.orders_30d || 0);
 
-  return '<div class="kpi-row mb-18">' +
+  return visitorsSection(await loadVisitorStats()) + '<div class="kpi-row mb-18">' +
       kpiCard({ label: "Chiffre d'affaires (30 j)", value: money(rev), delta: pct(rev, Number(s.revenue_prev30 || 0)), icon: 'trend', tone: 'g' }) +
       kpiCard({ label: 'Commandes (30 j)', value: String(n), icon: 'cart', tone: 'b' }) +
       kpiCard({ label: 'Panier moyen', value: money(n ? rev / n : 0), icon: 'bag', tone: 'v' }) +
@@ -1750,8 +1821,7 @@ async function pageAnalytics() {
         (hasRevenue
           ? '<div class="chart-box">' + lineChart(values, labels, { color: 'var(--green)' }) + '</div>'
           : emptyBlock('Pas encore de données de vente',
-              "Les mesures d'audience et de conversion nécessitent un outil de mesure (Plausible, Matomo ou Google Analytics) " +
-              "et un paiement en ligne actif. Aucune donnée n'est inventée ici.")) +
+              "Le graphique se remplit dès les premières commandes payées. Aucune donnée n'est inventée ici.")) +
       '</section>' +
       '<aside class="panel"><div class="panel-head"><h2>Catalogue</h2></div>' +
         '<div class="panel-body">' +
