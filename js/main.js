@@ -555,6 +555,21 @@ function initHeroVideo() {
   });
 }
 
+/* ------------------------- Mesure d'audience (Vercel) --------------------- */
+/* Vercel Web Analytics : sans cookie, sans identifiant publicitaire. Chargé
+   uniquement en production (jamais en local) et jamais sur les pages qui
+   portent un jeton de commande dans l'adresse. */
+(function () {
+  const host = location.hostname;
+  const prod = host === 'novra.paris' || host === 'www.novra.paris' || /\.vercel\.app$/.test(host);
+  if (!prod || /\/(confirmation|suivi)\.html$/.test(location.pathname)) return;
+  window.va = window.va || function () { (window.va.q = window.va.q || []).push(arguments); };
+  const s = document.createElement('script');
+  s.defer = true;
+  s.src = '/_vercel/insights/script.js';
+  document.head.appendChild(s);
+})();
+
 /* --------------------------------- Init ---------------------------------- */
 document.addEventListener('DOMContentLoaded', function () {
   renderHeader();
