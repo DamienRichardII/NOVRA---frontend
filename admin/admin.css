@@ -335,7 +335,10 @@
 
   /* --- Header compact -------------------------------------------------- */
   .burger { display: inline-flex; width: 44px; height: 44px; }
-  .admin-header { flex-wrap: wrap; padding: 14px var(--content-pad) 12px; gap: 10px; row-gap: 12px; }
+  /* Non collant sur téléphone : titre + sous-titre + commutateur occupaient
+     près de la moitié de l'écran et masquaient le haut du contenu au défilement. */
+  .admin-header { flex-wrap: wrap; padding: 14px var(--content-pad) 12px; gap: 10px; row-gap: 12px; position: static; }
+  .chip { white-space: nowrap; height: auto; min-height: 26px; padding-top: 3px; padding-bottom: 3px; }
   .admin-header h1 { font-size: var(--fs-page-title); }
   .admin-header p { font-size: 13px; max-width: 46ch; }
   .header-actions { width: 100%; flex-wrap: wrap; gap: 8px; }

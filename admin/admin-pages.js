@@ -133,7 +133,7 @@ async function pageDashboard() {
   const chart = hasRevenue
     ? '<div class="chart-box"><div class="chart-value">' + money(rev) + '</div>' + lineChart(values, labels, { color: 'var(--green)' }) + '</div>'
     : emptyBlock('Aucune vente pour le moment',
-        "La courbe s'affichera dès la première commande payée. Le module de paiement n'est pas encore branché sur le site.");
+        "La courbe s'affichera dès la première commande payée sur le site. Seules les commandes réellement encaissées sont comptées.");
 
   /* Top produits réel, sinon le catalogue par ordre d'affichage. */
   const tops = s.top_products || [];
