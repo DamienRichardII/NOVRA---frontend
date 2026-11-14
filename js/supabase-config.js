@@ -5,8 +5,8 @@
    RLS de la base. Ne jamais placer ici la clé service_role.
    ========================================================================= */
 
-const NOVRA_SUPABASE_URL = 'https://luvydsusnupkxvjfxsug.supabase.co';
-const NOVRA_SUPABASE_ANON_KEY = 'sb_publishable_t0hvioNULS1cBjkayowHxw_0lJgf5Ly';
+const NOVRA_SUPABASE_URL = 'https://zlqdpifvneogbtxvovjw.supabase.co';
+const NOVRA_SUPABASE_ANON_KEY = 'sb_publishable_Tdq-ikxsvg6U8mOPLMcV5w_kwgRNaiW';
 const NOVRA_MEDIA_BUCKET = 'novra-media';
 
 /* Appel d'une fonction serveur (paiement, statut de commande).
