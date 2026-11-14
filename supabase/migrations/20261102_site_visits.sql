@@ -2,6 +2,9 @@
 -- À exécuter dans Supabase > SQL Editor (projet luvydsusnupkxvjfxsug).
 -- Aucune donnée personnelle : un identifiant aléatoire par navigateur, le chemin de la page, la date.
 
+-- Nécessaire pour la purge automatique (absent d'un projet neuf).
+create extension if not exists pg_cron with schema pg_catalog;
+
 create table if not exists public.site_visits (
   id bigint generated always as identity primary key,
   visited_at timestamptz not null default now(),

@@ -4,6 +4,9 @@
 assets/*
 !assets/web/
 !assets/icons/
+# Photos produits et accueil issues du stockage Supabase (campagnes 08 et 09)
+!assets/08/
+!assets/09/
 !assets/novra-social-share-1200x630.png
 !assets/novra-favicon-512x512.png
 
