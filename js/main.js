@@ -591,6 +591,68 @@ function initHeroVideo() {
   });
 })();
 
+/* ------------------------- Pop-up Black Friday ---------------------------- */
+/* Affichée une fois par visiteur et par jour, jusqu'au 30 novembre 2026 inclus.
+   Jamais sur le panier, le paiement ni les pages de commande. */
+function initPromoPopup() {
+  const END = new Date('2026-12-01T00:00:00+01:00');
+  const KEY = 'novra_promo_bf2026';
+  if (Date.now() >= END.getTime()) return;
+  if (/\/(cart|checkout|confirmation|suivi)\.html$/.test(location.pathname)) return;
+  try {
+    const seen = Number(localStorage.getItem(KEY));
+    if (seen && Date.now() - seen < 24 * 3600 * 1000) return;
+  } catch (e) { /* stockage indisponible : on affiche */ }
+
+  const pop = document.createElement('div');
+  pop.className = 'promo-pop';
+  pop.innerHTML =
+    '<div class="promo-pop__panel" role="dialog" aria-modal="true" aria-labelledby="promo-title">' +
+      '<button type="button" class="promo-pop__close" aria-label="Fermer">&times;</button>' +
+      '<div class="promo-pop__body">' +
+        '<span class="promo-pop__brand">Novra</span>' +
+        '<h2 class="promo-pop__title" id="promo-title">Black<br>Friday</h2>' +
+        '<p class="promo-pop__tag">Run must go on</p>' +
+        '<a class="btn btn-light btn-arrow" href="marketplace.html">Découvrir la collection</a>' +
+        '<button type="button" class="promo-pop__skip">Non merci</button>' +
+      '</div>' +
+      '<div class="promo-pop__media"><img src="assets/web/vitrine/4o8a0158.jpg" alt="Athlète NOVRA en veste coupe-vent noire" loading="lazy"></div>' +
+    '</div>';
+
+  let opener = null;
+  function close() {
+    try { localStorage.setItem(KEY, String(Date.now())); } catch (e) {}
+    pop.classList.remove('is-open');
+    document.body.style.overflow = '';
+    document.removeEventListener('keydown', onKey);
+    setTimeout(function () { pop.remove(); if (opener && opener.focus) opener.focus(); }, 450);
+  }
+  function onKey(e) {
+    if (e.key === 'Escape') { close(); return; }
+    if (e.key !== 'Tab') return;
+    const f = pop.querySelectorAll('button, a[href]');
+    const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+
+  pop.addEventListener('click', function (e) {
+    if (e.target === pop || e.target.closest('.promo-pop__close, .promo-pop__skip')) close();
+    else if (e.target.closest('a')) { try { localStorage.setItem(KEY, String(Date.now())); } catch (err) {} }
+  });
+
+  setTimeout(function () {
+    /* Un tiroir ou une fenêtre déjà ouverte : on ne la dérange pas. */
+    if (document.body.style.overflow === 'hidden') return;
+    opener = document.activeElement;
+    document.body.appendChild(pop);
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function () { pop.classList.add('is-open'); });
+    pop.querySelector('.promo-pop__close').focus();
+    document.addEventListener('keydown', onKey);
+  }, 1800);
+}
+
 /* --------------------------------- Init ---------------------------------- */
 document.addEventListener('DOMContentLoaded', function () {
   renderHeader();
@@ -608,6 +670,7 @@ document.addEventListener('DOMContentLoaded', function () {
   initHeroVideo();
   initHeroSlideshow();
   initFooterAccordion();
+  initPromoPopup();
 
   /* Délégation globale */
   document.addEventListener('click', function (e) {
