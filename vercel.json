@@ -1,0 +1,10 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "novra-frontend.vercel.app" }],
+      "destination": "https://novra.paris/$1",
+      "permanent": true
+    }
+  ]
+}
